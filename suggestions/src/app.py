@@ -17,9 +17,7 @@ from concurrent import futures
 # Create a class to define the server functions, derived from
 # suggestions_pb2_grpc.HelloServiceServicer
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
-    def SuggestItems(self, request, context):
-        print("Request Data suggestItems:", request.items)
-        
+    def SuggestItems(self, request, context):       
         suggestion_result = get_suggestions(request.items)
         response = suggestions.SuggestionsResponse()
 
