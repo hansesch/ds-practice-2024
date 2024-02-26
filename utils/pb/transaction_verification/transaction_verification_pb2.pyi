@@ -6,18 +6,20 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class VerificationRequest(_message.Message):
-    __slots__ = ("items", "userName", "userContact", "discountCode", "billingAddress")
+    __slots__ = ("items", "userName", "userContact", "discountCode", "billingAddress", "creditCard")
     ITEMS_FIELD_NUMBER: _ClassVar[int]
     USERNAME_FIELD_NUMBER: _ClassVar[int]
     USERCONTACT_FIELD_NUMBER: _ClassVar[int]
     DISCOUNTCODE_FIELD_NUMBER: _ClassVar[int]
     BILLINGADDRESS_FIELD_NUMBER: _ClassVar[int]
+    CREDITCARD_FIELD_NUMBER: _ClassVar[int]
     items: _containers.RepeatedCompositeFieldContainer[TransactionItem]
     userName: str
     userContact: str
     discountCode: str
     billingAddress: BillingAddressInfo
-    def __init__(self, items: _Optional[_Iterable[_Union[TransactionItem, _Mapping]]] = ..., userName: _Optional[str] = ..., userContact: _Optional[str] = ..., discountCode: _Optional[str] = ..., billingAddress: _Optional[_Union[BillingAddressInfo, _Mapping]] = ...) -> None: ...
+    creditCard: CreditCardInfo
+    def __init__(self, items: _Optional[_Iterable[_Union[TransactionItem, _Mapping]]] = ..., userName: _Optional[str] = ..., userContact: _Optional[str] = ..., discountCode: _Optional[str] = ..., billingAddress: _Optional[_Union[BillingAddressInfo, _Mapping]] = ..., creditCard: _Optional[_Union[CreditCardInfo, _Mapping]] = ...) -> None: ...
 
 class TransactionItem(_message.Message):
     __slots__ = ("name", "quantity")
@@ -41,10 +43,20 @@ class BillingAddressInfo(_message.Message):
     country: str
     def __init__(self, street: _Optional[str] = ..., city: _Optional[str] = ..., state: _Optional[str] = ..., zip: _Optional[str] = ..., country: _Optional[str] = ...) -> None: ...
 
+class CreditCardInfo(_message.Message):
+    __slots__ = ("number", "expirationDate", "cvv")
+    NUMBER_FIELD_NUMBER: _ClassVar[int]
+    EXPIRATIONDATE_FIELD_NUMBER: _ClassVar[int]
+    CVV_FIELD_NUMBER: _ClassVar[int]
+    number: str
+    expirationDate: str
+    cvv: str
+    def __init__(self, number: _Optional[str] = ..., expirationDate: _Optional[str] = ..., cvv: _Optional[str] = ...) -> None: ...
+
 class VerificationResponse(_message.Message):
-    __slots__ = ("isVerified", "message")
-    ISVERIFIED_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("isValid", "message")
+    ISVALID_FIELD_NUMBER: _ClassVar[int]
     MESSAGE_FIELD_NUMBER: _ClassVar[int]
-    isVerified: bool
+    isValid: bool
     message: str
-    def __init__(self, isVerified: bool = ..., message: _Optional[str] = ...) -> None: ...
+    def __init__(self, isValid: bool = ..., message: _Optional[str] = ...) -> None: ...

@@ -12,6 +12,7 @@ message VerificationRequest {
     string userContact = 3;
     string discountCode = 4;
     BillingAddressInfo billingAddress = 5;
+    CreditCardInfo creditCard = 6;
 }
 
 message TransactionItem {
@@ -27,7 +28,14 @@ message BillingAddressInfo {
     string country = 5;
 }
 
+message CreditCardInfo {
+    string number = 1;
+    string expirationDate = 2;
+    string cvv = 3;
+}
+
 message VerificationResponse {
-    bool isVerified = 1;
+    bool isValid = 1;
     optional string message = 2;
 }
+
