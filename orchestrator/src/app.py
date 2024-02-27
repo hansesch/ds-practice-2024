@@ -1,5 +1,6 @@
 import sys
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
@@ -113,21 +114,26 @@ def checkout():
     # Print request object data
     data = request.json
     print("Request Data:", data)
-    is_transaction_valid = verify_transaction(data)
-    if not is_transaction_valid:
-        return {
-            'orderId': '12345',
-            'status': 'Order Declined'
-        }
+
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_transaction = executor.submit(verify_transaction, data)
+        future_suggestions = executor.submit(suggest_books, data)
+        
+        is_transaction_valid = future_transaction.result()
+        if not is_transaction_valid:
+            return {
+                'orderId': '12345',
+                'status': 'Order Declined'
+            }, 400  # HTTP status code for client error
+
+        suggested_books = future_suggestions.result()
     
-    suggested_books = suggest_books(data)
-    order_status_response = {
+    return {
         'orderId': '12345',
         'status': 'Order Approved',
         'suggestedBooks': suggested_books
-    }
-
-    return order_status_response
+    }, 200  # HTTP status code for OK
 
 
 if __name__ == '__main__':
