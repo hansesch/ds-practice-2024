@@ -134,13 +134,13 @@ def checkout():
             return {
                 'orderId': '12345',
                 'status': 'Order Declined'
-            }, 400  # HTTP status code for client error
+            }, 200  # HTTP status code for client error
         fraud_detection_info = future_fraud.result()
         if fraud_detection_info.isFraud:
             return {
                 'orderId': '12345',
                 'status': fraud_detection_info.message
-            }, 400
+            }, 200
         suggested_books = future_suggestions.result()
     
     return {
