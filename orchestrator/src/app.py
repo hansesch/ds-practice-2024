@@ -21,13 +21,22 @@ import grpc
 
 
 def greet(name='you'):
+    return 'Hello, ' + name
+
+def detect_fraud(data):
     # Establish a connection with the fraud-detection gRPC service.
     with grpc.insecure_channel('fraud_detection:50051') as channel:
         # Create a stub object.
-        stub = fraud_detection_grpc.HelloServiceStub(channel)
+        stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
+        fraud_detection_request = fraud_detection.FraudDetectionRequest(
+            creditCardNumber=data['creditCard']['number'],
+            creditCardExpirationDate=data['creditCard']['expirationDate'],
+            creditCardCVV=data['creditCard']['cvv'],
+            discountCode=data['discountCode']
+        )
         # Call the service through the stub object.
-        response = stub.SayHello(fraud_detection.HelloRequest(name=name))
-    return response.greeting
+        response = stub.DetectFraud(fraud_detection_request)
+    return response
 
 def suggest_books(data):
     item_categories = [item['category'] for item in data['items']]
@@ -113,6 +122,14 @@ def checkout():
     # Print request object data
     data = request.json
     print("Request Data:", data)
+
+    fraud_detection_info = detect_fraud(data)
+    if fraud_detection_info.isFraud:
+        return {
+            'orderId': '12345',
+            'status': fraud_detection_info.message
+        }
+
     is_transaction_valid = verify_transaction(data)
     if not is_transaction_valid:
         return {
