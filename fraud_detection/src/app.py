@@ -29,9 +29,8 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
             print('Passed fraud detection.')
         else:
             response.isFraud = True
-            message = 'Invalid discount code'
-            response.message = message
-            print(message)
+            response.message = 'Invalid discount code'
+            print(response.message)
         return response
 
 def serve():
@@ -44,7 +43,7 @@ def serve():
     server.add_insecure_port("[::]:" + port)
     # Start the server
     server.start()
-    print("Fraud Server started. Listening on port 50051.")
+    print("Fraud detection service server started. Listening on port 50051.")
     # Keep thread alive
     server.wait_for_termination()
 

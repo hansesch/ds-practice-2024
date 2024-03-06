@@ -45,21 +45,18 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         response = transaction_verification.VerificationResponse()
         if not check_credit_card_number(request.creditCard.number):
             response.isValid = False
-            message = "Invalid credit card number"
-            response.message = message
-            print(message)
+            response.message = "Invalid credit card number"
+            print(response.message)
             return response
         elif not check_expiry_date(request.creditCard.expirationDate):
             response.isValid = False
-            message = "Expiration date invalid"
-            response.message = message
-            print(message)
+            response.message = "Expiration date invalid"
+            print(response.message)
             return response
         elif not check_items(request.items):
             response.isValid = False
-            message = "Invalid quantity"
-            response.message = message
-            print(message)
+            response.message = "Invalid quantity"
+            print(response.message)
             return response
 
         response.isValid = True
@@ -75,7 +72,7 @@ def serve():
     server.add_insecure_port("[::]:" + port)
     # Start the server
     server.start()
-    print("Transaction verification server started. Listening on port 50052.")
+    print("Transaction verification service server started. Listening on port 50052.")
     # Keep thread alive
     server.wait_for_termination()
 

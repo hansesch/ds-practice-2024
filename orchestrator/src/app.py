@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # This set of lines are needed to import the gRPC stubs.
@@ -19,7 +20,6 @@ import suggestions_pb2_grpc as suggestions_grpc
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
 import grpc
-import logging
 
 def greet(name='you'):
     return 'Hello, ' + name
@@ -131,28 +131,24 @@ def checkout():
         future_suggestions = executor.submit(suggest_books, data)
         
         is_transaction_valid = future_transaction.result()
-        
-        if not is_transaction_valid: 
-            print('Invalid transaction')
-
         if not is_transaction_valid:
+            print('Invalid transaction')
             return {
                 'orderId': '12345',
                 'status': 'Order Declined'
             }, 200  # HTTP status code for client error
+
         fraud_detection_info = future_fraud.result()
-
-        if fraud_detection_info.isFraud: 
-            print('Fraud detected')
-
         if fraud_detection_info.isFraud:
+            print('Fraud detected')
             return {
                 'orderId': '12345',
                 'status': fraud_detection_info.message
             }, 200
+        
         suggested_books = future_suggestions.result()
     
-        print('Checkout successful')
+    print('Checkout successful')
     return {
         'orderId': '12345',
         'status': 'Order Approved',
