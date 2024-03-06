@@ -19,7 +19,7 @@ import suggestions_pb2_grpc as suggestions_grpc
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
 import grpc
-
+import logging
 
 def greet(name='you'):
     return 'Hello, ' + name
@@ -123,19 +123,28 @@ def checkout():
     # Print request object data
     data = request.json
     print("Request Data:", data)
+    print('Checkout called:', data)
 
     with ThreadPoolExecutor(max_workers=3) as executor:
         future_transaction = executor.submit(verify_transaction, data)
         future_fraud = executor.submit(detect_fraud, data)
         future_suggestions = executor.submit(suggest_books, data)
-
+        
         is_transaction_valid = future_transaction.result()
+        
+        if not is_transaction_valid: 
+            print('Invalid transaction')
+
         if not is_transaction_valid:
             return {
                 'orderId': '12345',
                 'status': 'Order Declined'
             }, 200  # HTTP status code for client error
         fraud_detection_info = future_fraud.result()
+
+        if fraud_detection_info.isFraud: 
+            print('Fraud detected')
+
         if fraud_detection_info.isFraud:
             return {
                 'orderId': '12345',
@@ -143,6 +152,7 @@ def checkout():
             }, 200
         suggested_books = future_suggestions.result()
     
+        print('Checkout successful')
     return {
         'orderId': '12345',
         'status': 'Order Approved',

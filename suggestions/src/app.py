@@ -1,6 +1,7 @@
 import sys
 import os
 import requests
+import logging
 
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
@@ -17,7 +18,8 @@ from concurrent import futures
 # Create a class to define the server functions, derived from
 # suggestions_pb2_grpc.HelloServiceServicer
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
-    def SuggestItems(self, request, context):       
+    def SuggestItems(self, request, context):
+        print('Suggesting books:', request)    
         suggestion_result = get_suggestions(request.items)
         response = suggestions.SuggestionsResponse()
 
@@ -40,7 +42,7 @@ def serve():
     server.add_insecure_port("[::]:" + port)
     # Start the server
     server.start()
-    print("Server started. Listening on port 50053.")
+    print("Suggestion server started. Listening on port 50053.")
     # Keep thread alive
     server.wait_for_termination()
 

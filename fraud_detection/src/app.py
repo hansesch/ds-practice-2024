@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
@@ -19,13 +20,18 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
     valid_discount_codes = ['47289142', '91247892042', '1927301293', '0129701293', '012937201']
 
     def DetectFraud(self, request, context):
+        print('Detecting fraud:', request)
+
         response = fraud_detection.FraudDetectionResponse()
 
         if request.discountCode in self.valid_discount_codes:
             response.isFraud = False
+            print('Passed fraud detection.')
         else:
             response.isFraud = True
-            response.message = 'Invalid discount code'
+            message = 'Invalid discount code'
+            response.message = message
+            print(message)
         return response
 
 def serve():
@@ -38,7 +44,7 @@ def serve():
     server.add_insecure_port("[::]:" + port)
     # Start the server
     server.start()
-    print("Server started. Listening on port 50051.")
+    print("Fraud Server started. Listening on port 50051.")
     # Keep thread alive
     server.wait_for_termination()
 

@@ -2,6 +2,7 @@ import sys
 import os
 import re
 from datetime import datetime, timedelta
+import logging
 
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
@@ -20,6 +21,7 @@ from concurrent import futures
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
 
     def VerifyTransaction(self, request, context):
+        print('Verifying transaction:', request)
         def check_credit_card_number(number):
             return re.fullmatch(r'\d{16}', number) is not None
         
@@ -40,20 +42,24 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
                     return False
             return True
         
-        #print("Verify Transcation Request:", request)
-
         response = transaction_verification.VerificationResponse()
         if not check_credit_card_number(request.creditCard.number):
             response.isValid = False
-            response.message = "Invalid credit card number"
+            message = "Invalid credit card number"
+            response.message = message
+            print(message)
             return response
         elif not check_expiry_date(request.creditCard.expirationDate):
             response.isValid = False
-            response.message = "Expiration date invalid"
+            message = "Expiration date invalid"
+            response.message = message
+            print(message)
             return response
         elif not check_items(request.items):
             response.isValid = False
-            response.message = "Invalid quantity"
+            message = "Invalid quantity"
+            response.message = message
+            print(message)
             return response
 
         response.isValid = True
@@ -69,7 +75,7 @@ def serve():
     server.add_insecure_port("[::]:" + port)
     # Start the server
     server.start()
-    print("Server started. Listening on port 50052.")
+    print("Transaction verification server started. Listening on port 50052.")
     # Keep thread alive
     server.wait_for_termination()
 
