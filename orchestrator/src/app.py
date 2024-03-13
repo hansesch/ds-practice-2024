@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # This set of lines are needed to import the gRPC stubs.
@@ -68,6 +69,8 @@ def verify_transaction(data):
         stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
 
         verification_request = transaction_verification.VerificationRequest(
+            orderId=str(random.randint(10000, 99999)),
+            vectorClock=[0, 0, 0],
             userName=data['user']['name'],
             userContact=data['user']['contact'],
             discountCode=data.get('discountCode', '')

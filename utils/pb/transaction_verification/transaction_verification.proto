@@ -7,12 +7,14 @@ service TransactionVerificationService {
 }
 
 message VerificationRequest {
-    repeated TransactionItem items = 1;
-    string userName = 2;
-    string userContact = 3;
-    string discountCode = 4;
-    BillingAddressInfo billingAddress = 5;
-    CreditCardInfo creditCard = 6;
+    string orderId = 1;
+    repeated int32 vectorClock = 2;
+    repeated TransactionItem items = 3;
+    string userName = 4;
+    string userContact = 5;
+    string discountCode = 6;
+    BillingAddressInfo billingAddress = 7;
+    CreditCardInfo creditCard = 8;
 }
 
 message TransactionItem {
@@ -35,7 +37,9 @@ message CreditCardInfo {
 }
 
 message VerificationResponse {
-    bool isValid = 1;
-    optional string message = 2;
+    string orderId = 1;
+    repeated int32 vectorClock = 2;
+    bool isValid = 3;
+    optional string message = 4;
 }
 

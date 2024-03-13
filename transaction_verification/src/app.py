@@ -19,9 +19,18 @@ from concurrent import futures
 # Create a class to define the server functions, derived from
 # transaction_verification_pb2_grpc.HelloServiceServicer
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
+    vector_clocks = {}
 
-    def VerifyTransaction(self, request, context):
+    def VerifyTransaction(self, request: transaction_verification.VerificationRequest, context):
         print('Verifying transaction:', request)
+        def update_vector_clock(order_id, vector_clock):
+            if order_id not in self.vector_clocks:
+                self.vector_clocks[order_id] = vector_clock
+            else:
+                existing_clock = self.vector_clocks[order_id]
+                existing_clock[0] = max(existing_clock[0], vector_clock[0] + 1)
+                self.vector_clocks[order_id] = existing_clock
+
         def check_credit_card_number(number):
             return re.fullmatch(r'\d{16}', number) is not None
         
@@ -42,7 +51,13 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
                     return False
             return True
         
+        order_id = request.orderId
+        update_vector_clock(order_id, request.vectorClock)
+        
         response = transaction_verification.VerificationResponse()
+        response.orderId = order_id
+        response.vectorClock = self.vector_clocks[order_id]
+        
         if not check_credit_card_number(request.creditCard.number):
             response.isValid = False
             response.message = "Invalid credit card number"
