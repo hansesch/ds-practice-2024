@@ -3,18 +3,25 @@ syntax = "proto3";
 package transaction_verification;
 
 service TransactionVerificationService {
-    rpc VerifyTransaction (VerificationRequest) returns (VerificationResponse);
+    rpc InitializeOrder (InitializationRequest) returns (bool);
+    rpc VerifyCreditCardNumber (RequestData) returns (bool);
+    rpc VerifyCreditCardExpiryDate(RequestData) returns (bool);
+    rpc VerifyOrderItems(RequestData) returns (bool);
 }
 
-message VerificationRequest {
+message InitializationRequest {
+    string orderId = 1;
+    repeated TransactionItem items = 2;
+    string userName = 3;
+    string userContact = 4;
+    string discountCode = 5;
+    BillingAddressInfo billingAddress = 6;
+    CreditCardInfo creditCard = 7;
+}
+
+message RequestData {
     string orderId = 1;
     repeated int32 vectorClock = 2;
-    repeated TransactionItem items = 3;
-    string userName = 4;
-    string userContact = 5;
-    string discountCode = 6;
-    BillingAddressInfo billingAddress = 7;
-    CreditCardInfo creditCard = 8;
 }
 
 message TransactionItem {
@@ -35,11 +42,3 @@ message CreditCardInfo {
     string expirationDate = 2;
     string cvv = 3;
 }
-
-message VerificationResponse {
-    string orderId = 1;
-    repeated int32 vectorClock = 2;
-    bool isValid = 3;
-    optional string message = 4;
-}
-
