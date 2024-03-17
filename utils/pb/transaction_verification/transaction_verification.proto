@@ -3,16 +3,29 @@ syntax = "proto3";
 package transaction_verification;
 
 service TransactionVerificationService {
-    rpc VerifyTransaction (VerificationRequest) returns (VerificationResponse);
+    rpc InitializeOrder(InitializationRequest) returns (ResponseData);
+    rpc VerifyCreditCardNumber(RequestData) returns (ResponseData);
+    rpc VerifyCreditCardExpiryDate(RequestData) returns (ResponseData);
+    rpc VerifyOrderItems (RequestData) returns (ResponseData);
 }
 
-message VerificationRequest {
-    repeated TransactionItem items = 1;
-    string userName = 2;
-    string userContact = 3;
-    string discountCode = 4;
-    BillingAddressInfo billingAddress = 5;
-    CreditCardInfo creditCard = 6;
+message InitializationRequest {
+    string orderId = 1;
+    repeated TransactionItem items = 2;
+    string userName = 3;
+    string userContact = 4;
+    string discountCode = 5;
+    BillingAddressInfo billingAddress = 6;
+    CreditCardInfo creditCard = 7;
+}
+
+message RequestData {
+    string orderId = 1;
+    repeated int32 vectorClock = 2;
+}
+
+message ResponseData {
+    bool isSuccess = 1;
 }
 
 message TransactionItem {
@@ -33,9 +46,3 @@ message CreditCardInfo {
     string expirationDate = 2;
     string cvv = 3;
 }
-
-message VerificationResponse {
-    bool isValid = 1;
-    optional string message = 2;
-}
-

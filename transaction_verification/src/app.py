@@ -9,9 +9,11 @@ import logging
 # Change these lines only if strictly needed.
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/vector_clock'))
 sys.path.insert(0, utils_path)
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
+import vector_clock_utils as vector_clock_utils
 
 import grpc
 from concurrent import futures
@@ -19,48 +21,75 @@ from concurrent import futures
 # Create a class to define the server functions, derived from
 # transaction_verification_pb2_grpc.HelloServiceServicer
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
+    process_number = 0 # Should process number be assigned by orchestrator?
+    orders = {}
 
-    def VerifyTransaction(self, request, context):
-        print('Verifying transaction:', request)
-        def check_credit_card_number(number):
-            return re.fullmatch(r'\d{16}', number) is not None
-        
-        def check_expiry_date(expiration_date):
+    def InitializeOrder(self, request: transaction_verification.InitializationRequest, context):
+        order_info = {
+            'vector_clock': [0, 0, 0],
+            'order_data': {
+                'items': request.items,
+                'user_name': request.userName,
+                'user_contact': request.userContact,
+                'discout_code': request.discountCode,
+                'billing_address': request.billingAddress,
+                'credit_card_info': request.creditCard
+            }
+        }
+        self.orders[request.orderId] = order_info
+        return transaction_verification.ResponseData(True)
+    
+    def VerifyCreditCardNumber(self, request: transaction_verification.RequestData, context):
+        order_id = request.orderId
+        if order_id in self.orders:
+            order_info = self.orders[order_id]
+            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, self.process_number)
+            
+            credit_card_number = order_info['order_data']['credit_card_info'].number
+            is_valid = re.fullmatch(r'\d{16}', credit_card_number) is not None
+            return transaction_verification.ResponseData(is_valid)
+        else:
+            print('order with id ' + order_id + ' has not been initialized!')
+            return transaction_verification.ResponseData(False)
+    
+    def VerifyCreditCardExpiryDate(self, request, context):
+        order_id = request.orderId
+        is_valid = False
+        if order_id in self.orders:
+            order_info = self.orders[order_id]
+            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, self.process_number)
+            
+            expiration_date = order_info['order_data']['credit_card_info'].expirationDate
             try:
                 exp_date = datetime.strptime(expiration_date, "%m/%y")
                 last_day_of_exp_month = exp_date.replace(day=28) + timedelta(days=4)
                 last_day_of_exp_month -= timedelta(days=last_day_of_exp_month.day)
-                return last_day_of_exp_month > datetime.now()
+                is_valid = last_day_of_exp_month > datetime.now()
             except ValueError:
-                return False 
-
-        def check_items(items):
-            if not items:
-                return False
-            for item in items:
-                if item.quantity <= 0:
-                    return False
-            return True
+                is_valid = False
+            return transaction_verification.ResponseData(is_valid)
+        else:
+            print('order with id ' + order_id + ' has not been initialized!')
+            return transaction_verification.ResponseData(False)
         
-        response = transaction_verification.VerificationResponse()
-        if not check_credit_card_number(request.creditCard.number):
-            response.isValid = False
-            response.message = "Invalid credit card number"
-            print(response.message)
-            return response
-        elif not check_expiry_date(request.creditCard.expirationDate):
-            response.isValid = False
-            response.message = "Expiration date invalid"
-            print(response.message)
-            return response
-        elif not check_items(request.items):
-            response.isValid = False
-            response.message = "Invalid quantity"
-            print(response.message)
-            return response
+    def VerifyOrderItems(self, request, context):
+        order_id = request.orderId
+        if order_id in self.orders:
+            order_info = self.orders[order_id]
+            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, self.process_number)
 
-        response.isValid = True
-        return response
+            is_valid = True
+            order_items = order_info['order_data']['items']
+            if not order_items:
+                is_valid = False
+            for item in order_items:
+                if item.quantity <= 0:
+                    is_valid = False
+            return transaction_verification.ResponseData(is_valid)
+        else:
+            print('order with id ' + order_id + ' has not been initialized!')
+            return transaction_verification.ResponseData(False)
+    
 
 def serve():
     # Create a gRPC server
