@@ -3,10 +3,10 @@ syntax = "proto3";
 package transaction_verification;
 
 service TransactionVerificationService {
-    rpc InitializeOrder (InitializationRequest) returns (bool);
-    rpc VerifyCreditCardNumber (RequestData) returns (bool);
-    rpc VerifyCreditCardExpiryDate(RequestData) returns (bool);
-    rpc VerifyOrderItems(RequestData) returns (bool);
+    rpc InitializeOrder(InitializationRequest) returns (ResponseData);
+    rpc VerifyCreditCardNumber(RequestData) returns (ResponseData);
+    rpc VerifyCreditCardExpiryDate(RequestData) returns (ResponseData);
+    rpc VerifyOrderItems (RequestData) returns (ResponseData);
 }
 
 message InitializationRequest {
@@ -22,6 +22,10 @@ message InitializationRequest {
 message RequestData {
     string orderId = 1;
     repeated int32 vectorClock = 2;
+}
+
+message ResponseData {
+    bool isSuccess = 1;
 }
 
 message TransactionItem {
