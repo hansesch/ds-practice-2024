@@ -9,8 +9,11 @@ import logging
 # Change these lines only if strictly needed.
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
-utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/vector_clock'))
 sys.path.insert(0, utils_path)
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/vector_clock'))
+sys.path.insert(1, utils_path)
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detection'))
+sys.path.insert(2, utils_path)
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
 import vector_clock_utils as vector_clock_utils
@@ -24,12 +27,9 @@ from concurrent import futures
 # transaction_verification_pb2_grpc.HelloServiceServicer
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
     orders = {}
+    process_number = 1
 
-    def VerifyTransaction(self, request: transaction_verification.InitializationRequest, context):
-        response = self.InitializeOrder(request, context)
-        if not response.isSuccess:
-            return response
-
+    def VerifyTransaction(self, request: transaction_verification.RequestData, context):
         request_data = transaction_verification.RequestData(
             orderId=request.orderId,
             vectorClock=request.vectorClock
@@ -82,15 +82,18 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             }
         }
         self.orders[request.orderId] = order_info
-        return transaction_verification.ResponseData(True)
+        print('Transaction Verification: Initialized Order, orderId: ' + request.orderId + ' orderInfo: ' + str(order_info))
+
+        return transaction_verification.ResponseData(isSuccess=True)
     
     def VerifyCreditCardNumber(self, request: transaction_verification.RequestData, context):
+        print('Transaction Verification: Verifying Credit Card Number, orderId: ' + request.orderId + ' vectorClock: ' + str(self.orders[request.orderId]['vector_clock']))
         order_id = request.orderId
         if order_id in self.orders:
             order_info = self.orders[order_id]
             order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], 
                                                                                 request.vectorClock, 
-                                                                                order_id)
+                                                                                1)
             
             credit_card_number = order_info['order_data']['credit_card_info'].number
             is_valid = re.fullmatch(r'\d{16}', credit_card_number) is not None
@@ -100,11 +103,13 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             return transaction_verification.ResponseData(False)
     
     def VerifyCreditCardExpiryDate(self, request, context):
+        print('Transaction Verification: Verifying Credit Card Expiry Date, orderId: ' + request.orderId + ' vectorClock: ' + str(self.orders[request.orderId]['vector_clock']))
+
         order_id = request.orderId
         is_valid = False
         if order_id in self.orders:
             order_info = self.orders[order_id]
-            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, order_id)
+            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, 1)
             
             expiration_date = order_info['order_data']['credit_card_info'].expirationDate
             try:
@@ -120,10 +125,12 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             return transaction_verification.ResponseData(False)
         
     def VerifyOrderItems(self, request, context):
+        print('Transaction Verification: Verifying order items, orderId: ' + request.orderId + ' vectorClock: ' + str(self.orders[request.orderId]['vector_clock']))
+
         order_id = request.orderId
         if order_id in self.orders:
             order_info = self.orders[order_id]
-            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, order_id)
+            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, 1)
 
             is_valid = True
             order_items = order_info['order_data']['items']

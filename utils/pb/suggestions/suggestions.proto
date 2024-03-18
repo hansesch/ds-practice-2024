@@ -12,6 +12,10 @@ message InitializationRequest {
     repeated TransactionItem items = 2;
 }
 
+message TransactionItem {
+    string name = 1;
+}
+
 message RequestData {
     string orderId = 1;
     repeated int32 vectorClock = 2;

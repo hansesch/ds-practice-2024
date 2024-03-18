@@ -5,11 +5,33 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
-class SuggestionsRequest(_message.Message):
-    __slots__ = ("items",)
+class InitializationRequest(_message.Message):
+    __slots__ = ("orderId", "items")
+    ORDERID_FIELD_NUMBER: _ClassVar[int]
     ITEMS_FIELD_NUMBER: _ClassVar[int]
-    items: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, items: _Optional[_Iterable[str]] = ...) -> None: ...
+    orderId: str
+    items: _containers.RepeatedCompositeFieldContainer[TransactionItem]
+    def __init__(self, orderId: _Optional[str] = ..., items: _Optional[_Iterable[_Union[TransactionItem, _Mapping]]] = ...) -> None: ...
+
+class TransactionItem(_message.Message):
+    __slots__ = ("name",)
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    def __init__(self, name: _Optional[str] = ...) -> None: ...
+
+class RequestData(_message.Message):
+    __slots__ = ("orderId", "vectorClock")
+    ORDERID_FIELD_NUMBER: _ClassVar[int]
+    VECTORCLOCK_FIELD_NUMBER: _ClassVar[int]
+    orderId: str
+    vectorClock: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, orderId: _Optional[str] = ..., vectorClock: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ResponseData(_message.Message):
+    __slots__ = ("isSuccess",)
+    ISSUCCESS_FIELD_NUMBER: _ClassVar[int]
+    isSuccess: bool
+    def __init__(self, isSuccess: bool = ...) -> None: ...
 
 class SuggestionsResponse(_message.Message):
     __slots__ = ("items",)

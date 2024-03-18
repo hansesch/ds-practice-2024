@@ -4,6 +4,8 @@ import logging
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+from flask import Flask, request
+from flask_cors import CORS
 
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
@@ -23,56 +25,45 @@ import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
 import grpc
 
-def greet(name='you'):
-    return 'Hello, ' + name
+class Orchestrator:
+    def __init__(self):
+        channel = grpc.insecure_channel('fraud_detection:50051')
+        self.fraud_detection_service = fraud_detection_grpc.FraudDetectionServiceStub(channel)
+        channel = grpc.insecure_channel('transaction_verification:50052')
+        self.transaction_verification_service = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
+        channel = grpc.insecure_channel('suggestions:50053')
+        self.suggestions_service = suggestions_grpc.SuggestionsServiceStub(channel)
 
-def detect_fraud(data):
-    # Establish a connection with the fraud-detection gRPC service.
-    with grpc.insecure_channel('fraud_detection:50051') as channel:
-        # Create a stub object.
-        stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
-        fraud_detection_request = fraud_detection.FraudDetectionRequest(
-            creditCardNumber=data['creditCard']['number'],
-            creditCardExpirationDate=data['creditCard']['expirationDate'],
-            creditCardCVV=data['creditCard']['cvv'],
-            discountCode=data['discountCode']
-        )
-        # Call the service through the stub object.
-        response = stub.DetectFraud(fraud_detection_request)
-    return response
 
-def suggest_books(data):
-    item_categories = [item['category'] for item in data['items']]
+    def initialize_services(self, data, orderId):
 
-    # Establish a connection with the suggestions gRPC service.
-    with grpc.insecure_channel('suggestions:50053') as channel:
-        # Create a stub object.
-        stub = suggestions_grpc.SuggestionsServiceStub(channel)
-        # Create the request object.
-        request = suggestions.SuggestionsRequest()
-        request.items.extend(item_categories) 
-        
-        # Call the service through the stub object.
-        response = stub.SuggestItems(request)
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            order_data = self.get_transaction_verification_order_data(orderId, data)
+            executor.submit(self.transaction_verification_service.InitializeOrder, order_data)
+            
+            order_data = self.get_fraud_detection_order_data(orderId, data)
+            executor.submit(self.fraud_detection_service.InitializeOrder, order_data)
+            
+            order_data = self.get_suggestions_service_order_data(orderId, data)
+            executor.submit(self.suggestions_service.InitializeOrder, order_data)
 
-    suggested_books = [{
-        'bookId': item.bookId,
-        'title': item.title,
-        'author': item.author
-    } for item in response.items]
 
-    return suggested_books
-
-def verify_transaction(data):
-    # Establish a connection with the transaction-verification gRPC service.
-    with grpc.insecure_channel('transaction_verification:50052') as channel:
-        # Create a stub object.
-        stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
+    def process_order(self, order_data):
         # This doesn't guarantee total uniqueness, but I think it's good enough for this example.
         orderId = str(int(time.time())) + str(random.randint(100, 999))
-        verification_request = transaction_verification.VerificationRequest(
+        # Initialize the services with the order data
+        self.initialize_services(order_data, orderId)
+        request_data = transaction_verification.RequestData(
             orderId=orderId,
-            vectorClock=[0, 0, 0],
+            vectorClock=[0, 0, 0]
+        )
+        verification_response = self.transaction_verification_service.VerifyTransaction(request_data)
+        return verification_response
+
+
+    def get_transaction_verification_order_data(self, orderId, data):
+        verification_request = transaction_verification.InitializationRequest(
+            orderId=orderId,
             userName=data['user']['name'],
             userContact=data['user']['contact'],
             discountCode=data.get('discountCode', '')
@@ -93,21 +84,38 @@ def verify_transaction(data):
             )
             verification_request.items.append(transaction_item)
 
-        # Call the service through the stub object.
-        response = stub.VerifyTransaction(verification_request)
-    return response.isValid
+        return verification_request
 
-# Import Flask.
-# Flask is a web framework for Python.
-# It allows you to build a web application quickly.
-# For more information, see https://flask.palletsprojects.com/en/latest/
-from flask import Flask, request
-from flask_cors import CORS
 
-# Create a simple Flask app.
+    def get_fraud_detection_order_data(self, orderId, data):
+        fraud_detection_request = fraud_detection.InitializationRequest(
+            orderId=orderId,
+            creditCardNumber=data['creditCard']['number'],
+            creditCardExpirationDate=data['creditCard']['expirationDate'],
+            creditCardCVV=data['creditCard']['cvv'],
+            discountCode=data['discountCode']
+        )
+
+        return fraud_detection_request
+    
+    def get_suggestions_service_order_data(self, orderId, data):
+        item_categories = [item['category'] for item in data['items']]
+        suggestions_request = suggestions.InitializationRequest(
+            orderId=orderId
+        )
+        for item in data['items']:
+            transaction_item = suggestions.TransactionItem(
+                name=item['name']
+            )
+            suggestions_request.items.extend([transaction_item])
+        return suggestions_request
+
+
 app = Flask(__name__)
-# Enable CORS for the app.
 CORS(app)
+
+def greet(name='you'):
+    return 'Hello, ' + name
 
 # Define a GET endpoint.
 @app.route('/', methods=['GET'])
@@ -127,10 +135,17 @@ def checkout():
     """
     # Print request object data
     data = request.json
+    
     print("Request Data:", data)
     print('Checkout called:', data)
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    # Create an instance of the Orchestrator class
+    orchestrator = Orchestrator()
+
+    # Process the order
+    orchestrator.process_order(data)
+
+"""    with ThreadPoolExecutor(max_workers=3) as executor:
         future_transaction = executor.submit(verify_transaction, data)
         future_fraud = executor.submit(detect_fraud, data)
         future_suggestions = executor.submit(suggest_books, data)
@@ -158,8 +173,7 @@ def checkout():
         'orderId': '12345',
         'status': 'Order Approved',
         'suggestedBooks': suggested_books
-    }, 200  # HTTP status code for OK
-
+    }, 200  # HTTP status code for OK"""
 
 if __name__ == '__main__':
     # Run the app in debug mode to enable hot reloading.

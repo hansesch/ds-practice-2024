@@ -34,6 +34,11 @@ class TransactionVerificationServiceStub(object):
                 request_serializer=transaction__verification__pb2.RequestData.SerializeToString,
                 response_deserializer=transaction__verification__pb2.ResponseData.FromString,
                 )
+        self.VerifyTransaction = channel.unary_unary(
+                '/transaction_verification.TransactionVerificationService/VerifyTransaction',
+                request_serializer=transaction__verification__pb2.RequestData.SerializeToString,
+                response_deserializer=transaction__verification__pb2.ResponseData.FromString,
+                )
 
 
 class TransactionVerificationServiceServicer(object):
@@ -63,6 +68,12 @@ class TransactionVerificationServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def VerifyTransaction(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_TransactionVerificationServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -83,6 +94,11 @@ def add_TransactionVerificationServiceServicer_to_server(servicer, server):
             ),
             'VerifyOrderItems': grpc.unary_unary_rpc_method_handler(
                     servicer.VerifyOrderItems,
+                    request_deserializer=transaction__verification__pb2.RequestData.FromString,
+                    response_serializer=transaction__verification__pb2.ResponseData.SerializeToString,
+            ),
+            'VerifyTransaction': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyTransaction,
                     request_deserializer=transaction__verification__pb2.RequestData.FromString,
                     response_serializer=transaction__verification__pb2.ResponseData.SerializeToString,
             ),
@@ -159,6 +175,23 @@ class TransactionVerificationService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/transaction_verification.TransactionVerificationService/VerifyOrderItems',
+            transaction__verification__pb2.RequestData.SerializeToString,
+            transaction__verification__pb2.ResponseData.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def VerifyTransaction(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/transaction_verification.TransactionVerificationService/VerifyTransaction',
             transaction__verification__pb2.RequestData.SerializeToString,
             transaction__verification__pb2.ResponseData.FromString,
             options, channel_credentials,

@@ -9,6 +9,8 @@ import logging
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
 sys.path.insert(0, utils_path)
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/vector_clock'))
+sys.path.insert(1, utils_path)
 import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
 import vector_clock_utils as vector_clock_utils
@@ -20,6 +22,7 @@ from concurrent import futures
 # suggestions_pb2_grpc.HelloServiceServicer
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
     orders = {}
+    process_number = 2
 
     def InitializeOrder(self, request: suggestions.InitializationRequest, context):
         order_info = {
@@ -29,9 +32,13 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
             }
         }
         self.orders[request.orderId] = order_info
-        return suggestions.ResponseData(True)
+        print('Suggestions: Initialized Order, orderId: ' + request.orderId + ' orderInfo: ' + str(order_info))
+
+        return suggestions.ResponseData(isSuccess=True)
         
     def SuggestItems(self, request: suggestions.RequestData, context):
+        print('Suggestions: Suggesting books, orderId: ' + request.orderId + ' vectorClock: ' + str(self.orders[request.orderId]['vector_clock']))
+
         order_id = request.orderId
         print('Suggesting books:', request)
 
@@ -39,7 +46,7 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
             order_info = self.orders[order_id]
             order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], 
                                                                                 request.vectorClock, 
-                                                                                order_id)
+                                                                                2)
             
             suggestion_result = get_suggestions(request.items)
             response = suggestions.SuggestionsResponse()

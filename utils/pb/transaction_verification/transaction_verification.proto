@@ -7,7 +7,7 @@ service TransactionVerificationService {
     rpc VerifyCreditCardNumber(RequestData) returns (ResponseData);
     rpc VerifyCreditCardExpiryDate(RequestData) returns (ResponseData);
     rpc VerifyOrderItems (RequestData) returns (ResponseData);
-    rpc VerifyTransaction(InitializationRequest) returns (ResponseData);
+    rpc VerifyTransaction(RequestData) returns (ResponseData);
 }
 
 message InitializationRequest {
