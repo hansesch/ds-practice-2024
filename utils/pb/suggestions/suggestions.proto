@@ -3,11 +3,22 @@ syntax = "proto3";
 package suggestions;
 
 service SuggestionsService {
-    rpc SuggestItems (SuggestionsRequest) returns (SuggestionsResponse);
+    rpc InitializeOrder(InitializationRequest) returns (ResponseData);
+    rpc SuggestItems (RequestData) returns (SuggestionsResponse);
 }
 
-message SuggestionsRequest {
-    repeated string items = 1;
+message InitializationRequest {
+    string orderId = 1;
+    repeated TransactionItem items = 2;
+}
+
+message RequestData {
+    string orderId = 1;
+    repeated int32 vectorClock = 2;
+}
+
+message ResponseData {
+    bool isSuccess = 1;
 }
 
 message SuggestionsResponse {

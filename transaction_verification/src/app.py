@@ -14,6 +14,8 @@ sys.path.insert(0, utils_path)
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
 import vector_clock_utils as vector_clock_utils
+import fraud_detection_pb2 as fraud_detection
+import fraud_detection_pb2_grpc as fraud_detection_grpc
 
 import grpc
 from concurrent import futures
@@ -21,8 +23,51 @@ from concurrent import futures
 # Create a class to define the server functions, derived from
 # transaction_verification_pb2_grpc.HelloServiceServicer
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
-    process_number = 0 # Should process number be assigned by orchestrator?
     orders = {}
+
+    def VerifyTransaction(self, request: transaction_verification.InitializationRequest, context):
+        response = self.InitializeOrder(request, context)
+        if not response.isSuccess:
+            return response
+
+        request_data = transaction_verification.RequestData(
+            orderId=request.orderId,
+            vectorClock=request.vectorClock
+        )
+
+        response = self.VerifyCreditCardNumber(request_data, context)
+        if not response.isSuccess:
+            return response
+
+        response = self.VerifyCreditCardExpiryDate(request_data, context)
+        if not response.isSuccess:
+            return response
+
+        response = self.VerifyOrderItems(request_data, context)
+        if not response.isSuccess:
+            return response
+
+        # Call the fraud-detection service.
+        fraud_detection_response = self.call_fraud_detection_service(request, request_data.vectorClock)
+        if not fraud_detection_response.isSuccess:
+            return fraud_detection_response
+        
+        return transaction_verification.ResponseData(True)
+
+
+    def call_fraud_detection_service(self, request, vectorClock):
+        with grpc.insecure_channel('fraud_detection:50051') as channel:
+            # Create a stub object.
+            stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
+            # Create a FraudDetectionRequest object.
+            fraud_detection_request = fraud_detection.FraudDetectionRequest(
+                orderId=request.orderId,
+                vectorClock=vectorClock
+            )
+            # Call the service through the stub object.
+            response = stub.CheckFraud(fraud_detection_request)
+        return response
+    
 
     def InitializeOrder(self, request: transaction_verification.InitializationRequest, context):
         order_info = {
@@ -43,7 +88,9 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         order_id = request.orderId
         if order_id in self.orders:
             order_info = self.orders[order_id]
-            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, self.process_number)
+            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], 
+                                                                                request.vectorClock, 
+                                                                                order_id)
             
             credit_card_number = order_info['order_data']['credit_card_info'].number
             is_valid = re.fullmatch(r'\d{16}', credit_card_number) is not None
@@ -57,7 +104,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         is_valid = False
         if order_id in self.orders:
             order_info = self.orders[order_id]
-            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, self.process_number)
+            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, order_id)
             
             expiration_date = order_info['order_data']['credit_card_info'].expirationDate
             try:
@@ -76,7 +123,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         order_id = request.orderId
         if order_id in self.orders:
             order_info = self.orders[order_id]
-            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, self.process_number)
+            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], request.vectorClock, order_id)
 
             is_valid = True
             order_items = order_info['order_data']['items']

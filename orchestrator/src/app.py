@@ -3,6 +3,7 @@ import os
 import logging
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
@@ -67,9 +68,10 @@ def verify_transaction(data):
     with grpc.insecure_channel('transaction_verification:50052') as channel:
         # Create a stub object.
         stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
-
+        # This doesn't guarantee total uniqueness, but I think it's good enough for this example.
+        orderId = str(int(time.time())) + str(random.randint(100, 999))
         verification_request = transaction_verification.VerificationRequest(
-            orderId=str(random.randint(10000, 99999)),
+            orderId=orderId,
             vectorClock=[0, 0, 0],
             userName=data['user']['name'],
             userContact=data['user']['contact'],

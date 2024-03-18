@@ -11,6 +11,7 @@ utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions')
 sys.path.insert(0, utils_path)
 import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
+import vector_clock_utils as vector_clock_utils
 
 import grpc
 from concurrent import futures
@@ -18,19 +19,41 @@ from concurrent import futures
 # Create a class to define the server functions, derived from
 # suggestions_pb2_grpc.HelloServiceServicer
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
-    def SuggestItems(self, request, context):
-        print('Suggesting books:', request)    
-        suggestion_result = get_suggestions(request.items)
-        response = suggestions.SuggestionsResponse()
+    orders = {}
 
-        for suggestion in suggestion_result:
-            suggested_item = response.items.add()
-            suggested_item.bookId = suggestion['bookId']
-            suggested_item.title = suggestion['title']
-            suggested_item.author = suggestion['author']
+    def InitializeOrder(self, request: suggestions.InitializationRequest, context):
+        order_info = {
+            'vector_clock': [0, 0, 0],
+            'order_data': {
+                'items': request.items
+            }
+        }
+        self.orders[request.orderId] = order_info
+        return suggestions.ResponseData(True)
+        
+    def SuggestItems(self, request: suggestions.RequestData, context):
+        order_id = request.orderId
+        print('Suggesting books:', request)
 
-        # Return the response object
-        return response
+        if order_id in self.orders:
+            order_info = self.orders[order_id]
+            order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], 
+                                                                                request.vectorClock, 
+                                                                                order_id)
+            
+            suggestion_result = get_suggestions(request.items)
+            response = suggestions.SuggestionsResponse()
+
+
+            for suggestion in suggestion_result:
+                suggested_item = response.items.add()
+                suggested_item.bookId = suggestion['bookId']
+                suggested_item.title = suggestion['title']
+                suggested_item.author = suggestion['author']
+            return suggestions.SuggestionsResponse(response)
+        else:
+            print('order with id ' + order_id + ' has not been initialized!')
+            return suggestions.ResponseData(False)
 
 def serve():
     # Create a gRPC server

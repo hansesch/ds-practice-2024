@@ -3,14 +3,25 @@ syntax = "proto3";
 package fraud_detection;
 
 service FraudDetectionService {
-    rpc DetectFraud(FraudDetectionRequest) returns (FraudDetectionResponse);
+    rpc InitializeOrder(InitializationRequest) returns (ResponseData);
+    rpc DetectFraud(RequestData) returns (FraudDetectionResponse);
 }
 
-message FraudDetectionRequest {
-    string creditCardNumber = 1;
-    string creditCardExpirationDate = 2;
-    string creditCardCVV = 3;
-    string discountCode = 4;
+message RequestData {
+    string orderId = 1;
+    repeated int32 vectorClock = 2;
+}
+
+message ResponseData {
+    bool isSuccess = 1;
+}
+
+message InitializationRequest {
+    string orderId = 1;
+    string creditCardNumber = 2;
+    string creditCardExpirationDate = 3;
+    string creditCardCVV = 4;
+    string discountCode = 5;
 }
 
 message FraudDetectionResponse {
