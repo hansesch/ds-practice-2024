@@ -24,9 +24,9 @@ from concurrent import futures
 # Create a class to define the server functions, derived from
 # fraud_detection_pb2_grpc.FraudDetectionServiceServicer
 class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
+    process_number = 1
     orders = {}
     valid_discount_codes = ['47289142', '91247892042', '1927301293', '0129701293', '012937201']
-    process_number = 0
 
     def InitializeOrder(self, request: fraud_detection.InitializationRequest, context):
         order_info = {
@@ -39,19 +39,16 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
             }
         }
         self.orders[request.orderId] = order_info
-        print('Fraud Detection: Initialized Order, orderId: ' + request.orderId + ' orderInfo: ' + str(order_info))
+        print('Fraud Detection service: Initialized order with id ' + request.orderId + ', order data: ' + str(order_info['order_data']))
 
         return fraud_detection.ResponseData(isSuccess=True)
 
     def DetectFraud(self, request: fraud_detection.RequestData, context):
-        print('Fraud Detection: Checking discount codes, orderId: ' + request.orderId + ' vectorClock: ' + str(self.orders[request.orderId]['vector_clock']))
-        print('Detecting fraud:', request)
-        
         order_id = request.orderId
+        print('Fraud Detection: Checking discount codes, orderId: ' + order_id + ' vector clock before operation: ' + str(self.orders[request.orderId]['vector_clock']))
 
         if order_id in self.orders:
             order_info = self.orders[order_id]
-            print('Fraud Detection: Checking discount codes, order_info: ', order_info)
 
             order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], 
                                                                                 request.vectorClock, 
@@ -63,7 +60,7 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
                 response.isFraud = False
                 print('Passed fraud detection.')
 
-                request_data = fraud_detection.RequestData(
+                request_data = suggestions.RequestData(
                     orderId=request.orderId,
                     vectorClock=request.vectorClock
                 )

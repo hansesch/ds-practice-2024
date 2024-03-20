@@ -32,29 +32,24 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
             }
         }
         self.orders[request.orderId] = order_info
-        print('Suggestions: Initialized Order, orderId: ' + request.orderId + ' orderInfo: ' + str(order_info))
-
+        print('Suggestions service: Initialized order with id ' + request.orderId + ', order data: ' + str(order_info['order_data']))
         return suggestions.ResponseData(isSuccess=True)
         
     def SuggestItems(self, request: suggestions.RequestData, context):
-        print('Suggestions: Suggesting books, orderId: ' + request.orderId + ' vectorClock: ' + str(self.orders[request.orderId]['vector_clock']))
-
         order_id = request.orderId
-        print('Suggesting books:', request)
+        print('Suggestions service: Suggesting books, orderId: ' + order_id + ' vector clock before operation: ' + str(self.orders[request.orderId]['vector_clock']))
 
         if order_id in self.orders:
-
             order_info = self.orders[order_id]
-            print('Suggestions: Suggesting books, order_info: ', order_info)
+
+            suggestion_result = get_suggestions(order_info['order_data']['items'])
 
             order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], 
                                                                                 request.vectorClock, 
                                                                                 2)
+            print("Suggestions service: vector clock after operation: " + str(order_info['vector_clock']))
             
-            suggestion_result = get_suggestions(order_info['order_data']['items'])
             response = suggestions.SuggestionsResponse()
-
-
             for suggestion in suggestion_result:
                 suggested_item = response.items.add()
                 suggested_item.bookId = suggestion['bookId']

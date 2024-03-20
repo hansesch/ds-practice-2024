@@ -27,7 +27,7 @@ from concurrent import futures
 # transaction_verification_pb2_grpc.HelloServiceServicer
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
     orders = {}
-    process_number = 1
+    process_number = 0
 
     def VerifyTransaction(self, request: transaction_verification.RequestData, context):
         request_data = transaction_verification.RequestData(

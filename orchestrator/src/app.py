@@ -99,7 +99,6 @@ class Orchestrator:
         return fraud_detection_request
     
     def get_suggestions_service_order_data(self, orderId, data):
-        item_categories = [item['category'] for item in data['items']]
         suggestions_request = suggestions.InitializationRequest(
             orderId=orderId
         )
@@ -136,7 +135,6 @@ def checkout():
     # Print request object data
     data = request.json
     
-    print("Request Data:", data)
     print('Checkout called:', data)
 
     # Create an instance of the Orchestrator class
