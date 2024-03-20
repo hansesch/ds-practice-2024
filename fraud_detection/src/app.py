@@ -54,43 +54,33 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
                                                                                 request.vectorClock, 
                                                                                 0)
             
-            response = fraud_detection.FraudDetectionResponse()
+            print('updated vector clock: ' + str(order_info['vector_lock']))
 
             if order_info['order_data']['discountCode'] in self.valid_discount_codes:
-                response.isFraud = False
-                print('Passed fraud detection.')
+                print('Passed fraud detection. Calling suggestions service next')
 
                 request_data = suggestions.RequestData(
-                    orderId=request.orderId,
-                    vectorClock=request.vectorClock
+                    orderId=order_id,
+                    vectorClock=order_info['vector_lock']
                 )
-                suggestions_response = self.call_suggestions_service(request, request_data.vectorClock)
+                suggestions_response = self.call_suggestions_service(request_data)
+                print("Received response from Suggestions service")
                 return suggestions_response
             else:
-                response.isFraud = True
-                response.message = 'Invalid discount code'
-                print(response.message)
-                return fraud_detection.ResponseData(isSuccess=response)
+                print('Invalid discount code. Did not pass fraud detetction.')
+                return fraud_detection.ResponseData(isSuccess=False)
         else:
             print('order with id ' + order_id + ' has not been initialized!')
             return fraud_detection.ResponseData(isSuccess=False)
         
 
-
-
-
-    def call_suggestions_service(self, request, vectorClock):
+    def call_suggestions_service(self, request_data: suggestions.RequestData):
         # Establish a connection with the suggestions gRPC service.
         with grpc.insecure_channel('suggestions:50053') as channel:
             # Create a stub object.
             stub = suggestions_grpc.SuggestionsServiceStub(channel)
-            # Create a SuggestionsRequest object.
-            suggestions_request = suggestions.RequestData(
-                orderId=request.orderId,
-                vectorClock=vectorClock
-            )
             # Call the service through the stub object.
-            response = stub.SuggestItems(suggestions_request)
+            response = stub.SuggestItems(request_data)
         return response
     
 

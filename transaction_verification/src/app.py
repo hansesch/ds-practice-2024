@@ -16,9 +16,11 @@ utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detecti
 sys.path.insert(2, utils_path)
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
-import vector_clock_utils as vector_clock_utils
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
+import suggestions_pb2 as suggestions
+import suggestions_pb2_grpc as suggestions_grpc
+import vector_clock_utils as vector_clock_utils
 
 import grpc
 from concurrent import futures
@@ -29,45 +31,18 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
     orders = {}
     process_number = 0
 
-    def VerifyTransaction(self, request: transaction_verification.RequestData, context):
-        request_data = transaction_verification.RequestData(
-            orderId=request.orderId,
-            vectorClock=request.vectorClock
-        )
 
-        response = self.VerifyCreditCardNumber(request_data, context)
-        if not response.isSuccess:
-            return response
-
-        response = self.VerifyCreditCardExpiryDate(request_data, context)
-        if not response.isSuccess:
-            return response
-
-        response = self.VerifyOrderItems(request_data, context)
-        if not response.isSuccess:
-            return response
-
-        # Call the fraud-detection service.
-        fraud_detection_response = self.call_fraud_detection_service(request, request_data.vectorClock)
-        return fraud_detection_response
-
-        #if not fraud_detection_response.isSuccess:
-        
-        #return transaction_verification.ResponseData(isSuccess=True)
-
-
-    def call_fraud_detection_service(self, request, vectorClock):
+    def call_fraud_detection_service(self, request_data: fraud_detection.RequestData):
         with grpc.insecure_channel('fraud_detection:50051') as channel:
             # Create a stub object.
             stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
-            # Create a FraudDetectionRequest object.
-            fraud_detection_request = fraud_detection.RequestData(
-                orderId=request.orderId,
-                vectorClock=vectorClock
-            )
             # Call the service through the stub object.
-            response = stub.DetectFraud(fraud_detection_request)
-        return response
+            response = stub.DetectFraud(request_data)
+
+        if response is suggestions.SuggestionsResponse:
+            return response
+        else:
+            return transaction_verification.ResponseData(isSuccess=False)
     
 
     def InitializeOrder(self, request: transaction_verification.InitializationRequest, context):
@@ -140,7 +115,12 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             for item in order_items:
                 if item.quantity <= 0:
                     is_valid = False
-            return transaction_verification.ResponseData(isSuccess=is_valid)
+            
+            # Call the fraud-detection service.
+            fraud_detection_response = self.call_fraud_detection_service(request, request_data.vectorClock)
+            print("received response from fraud detection service")
+            return fraud_detection_response
+            # return transaction_verification.ResponseData(isSuccess=is_valid)
         else:
             print('order with id ' + order_id + ' has not been initialized!')
             return transaction_verification.ResponseData(isSuccess=False)
