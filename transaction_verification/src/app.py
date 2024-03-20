@@ -49,10 +49,11 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
 
         # Call the fraud-detection service.
         fraud_detection_response = self.call_fraud_detection_service(request, request_data.vectorClock)
-        if not fraud_detection_response.isSuccess:
-            return fraud_detection_response
+        return fraud_detection_response
+
+        #if not fraud_detection_response.isSuccess:
         
-        return transaction_verification.ResponseData(True)
+        #return transaction_verification.ResponseData(isSuccess=True)
 
 
     def call_fraud_detection_service(self, request, vectorClock):
@@ -60,12 +61,12 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             # Create a stub object.
             stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
             # Create a FraudDetectionRequest object.
-            fraud_detection_request = fraud_detection.FraudDetectionRequest(
+            fraud_detection_request = fraud_detection.RequestData(
                 orderId=request.orderId,
                 vectorClock=vectorClock
             )
             # Call the service through the stub object.
-            response = stub.CheckFraud(fraud_detection_request)
+            response = stub.DetectFraud(fraud_detection_request)
         return response
     
 
@@ -97,10 +98,10 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             
             credit_card_number = order_info['order_data']['credit_card_info'].number
             is_valid = re.fullmatch(r'\d{16}', credit_card_number) is not None
-            return transaction_verification.ResponseData(is_valid)
+            return transaction_verification.ResponseData(isSuccess=is_valid)
         else:
             print('order with id ' + order_id + ' has not been initialized!')
-            return transaction_verification.ResponseData(False)
+            return transaction_verification.ResponseData(isSuccess=False)
     
     def VerifyCreditCardExpiryDate(self, request, context):
         print('Transaction Verification: Verifying Credit Card Expiry Date, orderId: ' + request.orderId + ' vectorClock: ' + str(self.orders[request.orderId]['vector_clock']))
@@ -119,10 +120,10 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
                 is_valid = last_day_of_exp_month > datetime.now()
             except ValueError:
                 is_valid = False
-            return transaction_verification.ResponseData(is_valid)
+            return transaction_verification.ResponseData(isSuccess=is_valid)
         else:
             print('order with id ' + order_id + ' has not been initialized!')
-            return transaction_verification.ResponseData(False)
+            return transaction_verification.ResponseData(isSuccess=False)
         
     def VerifyOrderItems(self, request, context):
         print('Transaction Verification: Verifying order items, orderId: ' + request.orderId + ' vectorClock: ' + str(self.orders[request.orderId]['vector_clock']))
@@ -139,10 +140,10 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             for item in order_items:
                 if item.quantity <= 0:
                     is_valid = False
-            return transaction_verification.ResponseData(is_valid)
+            return transaction_verification.ResponseData(isSuccess=is_valid)
         else:
             print('order with id ' + order_id + ' has not been initialized!')
-            return transaction_verification.ResponseData(False)
+            return transaction_verification.ResponseData(isSuccess=False)
     
 
 def serve():

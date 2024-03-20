@@ -145,29 +145,23 @@ def checkout():
     # Process the order
     orchestrator.process_order(data)
 
-"""    with ThreadPoolExecutor(max_workers=3) as executor:
-        future_transaction = executor.submit(verify_transaction, data)
-        future_fraud = executor.submit(detect_fraud, data)
-        future_suggestions = executor.submit(suggest_books, data)
-        
-        is_transaction_valid = future_transaction.result()
-        if not is_transaction_valid:
-            print('Invalid transaction')
-            return {
-                'orderId': '12345',
-                'status': 'Order Declined'
-            }, 200  # HTTP status code for client error
+    if not is_transaction_valid:
+        print('Invalid transaction')
+        return {
+            'orderId': '12345',
+            'status': 'Order Declined'
+        }, 200  # HTTP status code for client error
 
-        fraud_detection_info = future_fraud.result()
-        if fraud_detection_info.isFraud:
-            print('Fraud detected')
-            return {
-                'orderId': '12345',
-                'status': fraud_detection_info.message
-            }, 200
-        
-        suggested_books = future_suggestions.result()
+    fraud_detection_info = future_fraud.result()
+    if fraud_detection_info.isFraud:
+        print('Fraud detected')
+        return {
+            'orderId': '12345',
+            'status': fraud_detection_info.message
+        }, 200
     
+    suggested_books = future_suggestions.result()
+
     print('Checkout successful')
     return {
         'orderId': '12345',

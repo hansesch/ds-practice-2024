@@ -51,13 +51,15 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
 
         if order_id in self.orders:
             order_info = self.orders[order_id]
+            print('Fraud Detection: Checking discount codes, order_info: ', order_info)
+
             order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], 
                                                                                 request.vectorClock, 
                                                                                 0)
             
             response = fraud_detection.FraudDetectionResponse()
 
-            if request.discountCode in self.valid_discount_codes:
+            if order_info['order_data']['discountCode'] in self.valid_discount_codes:
                 response.isFraud = False
                 print('Passed fraud detection.')
 
@@ -71,10 +73,10 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
                 response.isFraud = True
                 response.message = 'Invalid discount code'
                 print(response.message)
-                return fraud_detection.ResponseData(response)
+                return fraud_detection.ResponseData(isSuccess=response)
         else:
             print('order with id ' + order_id + ' has not been initialized!')
-            return suggestions.ResponseData(False)
+            return fraud_detection.ResponseData(isSuccess=False)
         
 
 
@@ -86,12 +88,12 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
             # Create a stub object.
             stub = suggestions_grpc.SuggestionsServiceStub(channel)
             # Create a SuggestionsRequest object.
-            suggestions_request = suggestions.SuggestionsRequest(
+            suggestions_request = suggestions.RequestData(
                 orderId=request.orderId,
                 vectorClock=vectorClock
             )
             # Call the service through the stub object.
-            response = stub.GenerateSuggestions(suggestions_request)
+            response = stub.SuggestItems(suggestions_request)
         return response
     
 

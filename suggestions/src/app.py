@@ -43,12 +43,15 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
         print('Suggesting books:', request)
 
         if order_id in self.orders:
+
             order_info = self.orders[order_id]
+            print('Suggestions: Suggesting books, order_info: ', order_info)
+
             order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], 
                                                                                 request.vectorClock, 
                                                                                 2)
             
-            suggestion_result = get_suggestions(request.items)
+            suggestion_result = get_suggestions(order_info['order_data']['items'])
             response = suggestions.SuggestionsResponse()
 
 
@@ -57,10 +60,10 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
                 suggested_item.bookId = suggestion['bookId']
                 suggested_item.title = suggestion['title']
                 suggested_item.author = suggestion['author']
-            return suggestions.SuggestionsResponse(response)
+            return response
         else:
             print('order with id ' + order_id + ' has not been initialized!')
-            return suggestions.ResponseData(False)
+            return suggestions.ResponseData(isSuccess=False)
 
 def serve():
     # Create a gRPC server
@@ -79,7 +82,7 @@ def serve():
 
 def get_suggestions(purchased_items):
     suggestions = []
-    category = purchased_items[0].replace('_', ' ').lower()
+    category = purchased_items[0].name.replace('_', ' ').lower()
     url = f"https://openlibrary.org/subjects/{category}.json?limit=3"
     try:
         response = requests.get(url)
