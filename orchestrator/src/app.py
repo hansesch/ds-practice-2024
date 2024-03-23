@@ -11,12 +11,14 @@ from flask_cors import CORS
 # The path of the stubs is relative to the current file, or absolute inside the container.
 # Change these lines only if strictly needed.
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
-utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detection'))
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/common'))
 sys.path.insert(0, utils_path)
-utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detection'))
 sys.path.insert(1, utils_path)
-utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
 sys.path.insert(2, utils_path)
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
+sys.path.insert(3, utils_path)
 import common_pb2 as common
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
