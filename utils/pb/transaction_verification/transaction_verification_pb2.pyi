@@ -1,3 +1,5 @@
+from common import common_pb2 as _common_pb2
+from suggestions import suggestions_pb2 as _suggestions_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -22,20 +24,6 @@ class InitializationRequest(_message.Message):
     billingAddress: BillingAddressInfo
     creditCard: CreditCardInfo
     def __init__(self, orderId: _Optional[str] = ..., items: _Optional[_Iterable[_Union[TransactionItem, _Mapping]]] = ..., userName: _Optional[str] = ..., userContact: _Optional[str] = ..., discountCode: _Optional[str] = ..., billingAddress: _Optional[_Union[BillingAddressInfo, _Mapping]] = ..., creditCard: _Optional[_Union[CreditCardInfo, _Mapping]] = ...) -> None: ...
-
-class RequestData(_message.Message):
-    __slots__ = ("orderId", "vectorClock")
-    ORDERID_FIELD_NUMBER: _ClassVar[int]
-    VECTORCLOCK_FIELD_NUMBER: _ClassVar[int]
-    orderId: str
-    vectorClock: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, orderId: _Optional[str] = ..., vectorClock: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class ResponseData(_message.Message):
-    __slots__ = ("isSuccess",)
-    ISSUCCESS_FIELD_NUMBER: _ClassVar[int]
-    isSuccess: bool
-    def __init__(self, isSuccess: bool = ...) -> None: ...
 
 class TransactionItem(_message.Message):
     __slots__ = ("name", "quantity")

@@ -2,7 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import suggestions_pb2 as suggestions__pb2
+from common import common_pb2 as common_dot_common__pb2
+from suggestions import suggestions_pb2 as suggestions_dot_suggestions__pb2
 
 
 class SuggestionsServiceStub(object):
@@ -16,13 +17,13 @@ class SuggestionsServiceStub(object):
         """
         self.InitializeOrder = channel.unary_unary(
                 '/suggestions.SuggestionsService/InitializeOrder',
-                request_serializer=suggestions__pb2.InitializationRequest.SerializeToString,
-                response_deserializer=suggestions__pb2.ResponseData.FromString,
+                request_serializer=suggestions_dot_suggestions__pb2.InitializationRequest.SerializeToString,
+                response_deserializer=common_dot_common__pb2.ResponseData.FromString,
                 )
         self.SuggestItems = channel.unary_unary(
                 '/suggestions.SuggestionsService/SuggestItems',
-                request_serializer=suggestions__pb2.RequestData.SerializeToString,
-                response_deserializer=suggestions__pb2.SuggestionsResponse.FromString,
+                request_serializer=common_dot_common__pb2.RequestData.SerializeToString,
+                response_deserializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
                 )
 
 
@@ -46,13 +47,13 @@ def add_SuggestionsServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'InitializeOrder': grpc.unary_unary_rpc_method_handler(
                     servicer.InitializeOrder,
-                    request_deserializer=suggestions__pb2.InitializationRequest.FromString,
-                    response_serializer=suggestions__pb2.ResponseData.SerializeToString,
+                    request_deserializer=suggestions_dot_suggestions__pb2.InitializationRequest.FromString,
+                    response_serializer=common_dot_common__pb2.ResponseData.SerializeToString,
             ),
             'SuggestItems': grpc.unary_unary_rpc_method_handler(
                     servicer.SuggestItems,
-                    request_deserializer=suggestions__pb2.RequestData.FromString,
-                    response_serializer=suggestions__pb2.SuggestionsResponse.SerializeToString,
+                    request_deserializer=common_dot_common__pb2.RequestData.FromString,
+                    response_serializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -76,8 +77,8 @@ class SuggestionsService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/suggestions.SuggestionsService/InitializeOrder',
-            suggestions__pb2.InitializationRequest.SerializeToString,
-            suggestions__pb2.ResponseData.FromString,
+            suggestions_dot_suggestions__pb2.InitializationRequest.SerializeToString,
+            common_dot_common__pb2.ResponseData.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -93,7 +94,7 @@ class SuggestionsService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/suggestions.SuggestionsService/SuggestItems',
-            suggestions__pb2.RequestData.SerializeToString,
-            suggestions__pb2.SuggestionsResponse.FromString,
+            common_dot_common__pb2.RequestData.SerializeToString,
+            suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

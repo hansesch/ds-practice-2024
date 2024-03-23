@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package common;
+
+message RequestData {
+    string orderId = 1;
+    repeated int32 vectorClock = 2;
+}
+
+message ResponseData {
+    bool isSuccess = 1;
+    optional string message = 2;
+}

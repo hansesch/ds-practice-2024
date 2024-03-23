@@ -2,7 +2,9 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import fraud_detection_pb2 as fraud__detection__pb2
+from common import common_pb2 as common_dot_common__pb2
+from fraud_detection import fraud_detection_pb2 as fraud__detection_dot_fraud__detection__pb2
+from suggestions import suggestions_pb2 as suggestions_dot_suggestions__pb2
 
 
 class FraudDetectionServiceStub(object):
@@ -16,13 +18,13 @@ class FraudDetectionServiceStub(object):
         """
         self.InitializeOrder = channel.unary_unary(
                 '/fraud_detection.FraudDetectionService/InitializeOrder',
-                request_serializer=fraud__detection__pb2.InitializationRequest.SerializeToString,
-                response_deserializer=fraud__detection__pb2.ResponseData.FromString,
+                request_serializer=fraud__detection_dot_fraud__detection__pb2.InitializationRequest.SerializeToString,
+                response_deserializer=common_dot_common__pb2.ResponseData.FromString,
                 )
         self.DetectFraud = channel.unary_unary(
                 '/fraud_detection.FraudDetectionService/DetectFraud',
-                request_serializer=fraud__detection__pb2.RequestData.SerializeToString,
-                response_deserializer=fraud__detection__pb2.FraudDetectionResponse.FromString,
+                request_serializer=common_dot_common__pb2.RequestData.SerializeToString,
+                response_deserializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
                 )
 
 
@@ -46,13 +48,13 @@ def add_FraudDetectionServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'InitializeOrder': grpc.unary_unary_rpc_method_handler(
                     servicer.InitializeOrder,
-                    request_deserializer=fraud__detection__pb2.InitializationRequest.FromString,
-                    response_serializer=fraud__detection__pb2.ResponseData.SerializeToString,
+                    request_deserializer=fraud__detection_dot_fraud__detection__pb2.InitializationRequest.FromString,
+                    response_serializer=common_dot_common__pb2.ResponseData.SerializeToString,
             ),
             'DetectFraud': grpc.unary_unary_rpc_method_handler(
                     servicer.DetectFraud,
-                    request_deserializer=fraud__detection__pb2.RequestData.FromString,
-                    response_serializer=fraud__detection__pb2.FraudDetectionResponse.SerializeToString,
+                    request_deserializer=common_dot_common__pb2.RequestData.FromString,
+                    response_serializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -76,8 +78,8 @@ class FraudDetectionService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/fraud_detection.FraudDetectionService/InitializeOrder',
-            fraud__detection__pb2.InitializationRequest.SerializeToString,
-            fraud__detection__pb2.ResponseData.FromString,
+            fraud__detection_dot_fraud__detection__pb2.InitializationRequest.SerializeToString,
+            common_dot_common__pb2.ResponseData.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -93,7 +95,7 @@ class FraudDetectionService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/fraud_detection.FraudDetectionService/DetectFraud',
-            fraud__detection__pb2.RequestData.SerializeToString,
-            fraud__detection__pb2.FraudDetectionResponse.FromString,
+            common_dot_common__pb2.RequestData.SerializeToString,
+            suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

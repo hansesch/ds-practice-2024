@@ -2,18 +2,12 @@ syntax = "proto3";
 
 package fraud_detection;
 
+import "common/common.proto";
+import "suggestions/suggestions.proto";
+
 service FraudDetectionService {
-    rpc InitializeOrder(InitializationRequest) returns (ResponseData);
-    rpc DetectFraud(RequestData) returns (FraudDetectionResponse);
-}
-
-message RequestData {
-    string orderId = 1;
-    repeated int32 vectorClock = 2;
-}
-
-message ResponseData {
-    bool isSuccess = 1;
+    rpc InitializeOrder(InitializationRequest) returns (common.ResponseData);
+    rpc DetectFraud(common.RequestData) returns (suggestions.SuggestionsResponse);
 }
 
 message InitializationRequest {
@@ -22,9 +16,4 @@ message InitializationRequest {
     string creditCardExpirationDate = 3;
     string creditCardCVV = 4;
     string discountCode = 5;
-}
-
-message FraudDetectionResponse {
-    bool isFraud = 1;
-    optional string message = 2;
 }

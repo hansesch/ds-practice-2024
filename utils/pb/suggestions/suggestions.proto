@@ -2,9 +2,11 @@ syntax = "proto3";
 
 package suggestions;
 
+import "common/common.proto";
+
 service SuggestionsService {
-    rpc InitializeOrder(InitializationRequest) returns (ResponseData);
-    rpc SuggestItems (RequestData) returns (SuggestionsResponse);
+    rpc InitializeOrder(InitializationRequest) returns (common.ResponseData);
+    rpc SuggestItems (common.RequestData) returns (SuggestionsResponse);
 }
 
 message InitializationRequest {
@@ -14,15 +16,6 @@ message InitializationRequest {
 
 message TransactionItem {
     string name = 1;
-}
-
-message RequestData {
-    string orderId = 1;
-    repeated int32 vectorClock = 2;
-}
-
-message ResponseData {
-    bool isSuccess = 1;
 }
 
 message SuggestionsResponse {
