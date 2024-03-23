@@ -21,7 +21,7 @@ class TransactionItem(_message.Message):
     def __init__(self, name: _Optional[str] = ...) -> None: ...
 
 class SuggestionsResponse(_message.Message):
-    __slots__ = ("items",)
+    __slots__ = ("isSuccess", "items", "message")
     class SuggestedItem(_message.Message):
         __slots__ = ("bookId", "title", "author")
         BOOKID_FIELD_NUMBER: _ClassVar[int]
@@ -31,6 +31,10 @@ class SuggestionsResponse(_message.Message):
         title: str
         author: str
         def __init__(self, bookId: _Optional[str] = ..., title: _Optional[str] = ..., author: _Optional[str] = ...) -> None: ...
+    ISSUCCESS_FIELD_NUMBER: _ClassVar[int]
     ITEMS_FIELD_NUMBER: _ClassVar[int]
+    MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    isSuccess: bool
     items: _containers.RepeatedCompositeFieldContainer[SuggestionsResponse.SuggestedItem]
-    def __init__(self, items: _Optional[_Iterable[_Union[SuggestionsResponse.SuggestedItem, _Mapping]]] = ...) -> None: ...
+    message: str
+    def __init__(self, isSuccess: bool = ..., items: _Optional[_Iterable[_Union[SuggestionsResponse.SuggestedItem, _Mapping]]] = ..., message: _Optional[str] = ...) -> None: ...

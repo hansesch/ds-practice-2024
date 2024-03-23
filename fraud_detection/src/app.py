@@ -12,9 +12,10 @@ utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/vector_clock'))
 sys.path.insert(1, utils_path)
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
 sys.path.insert(2, utils_path)
+import vector_clock_utils as vector_clock_utils
+import common_pb2 as common;
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
-import vector_clock_utils as vector_clock_utils
 import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
 
@@ -43,7 +44,7 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
 
         return fraud_detection.ResponseData(isSuccess=True)
 
-    def DetectFraud(self, request: fraud_detection.RequestData, context):
+    def DetectFraud(self, request: common.RequestData, context):
         order_id = request.orderId
         print('Fraud Detection: Checking discount codes, orderId: ' + order_id + ' vector clock before operation: ' + str(self.orders[request.orderId]['vector_clock']))
 
@@ -59,7 +60,7 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
             if order_info['order_data']['discountCode'] in self.valid_discount_codes:
                 print('Passed fraud detection. Calling suggestions service next')
 
-                request_data = suggestions.RequestData(
+                request_data = common.RequestData(
                     orderId=order_id,
                     vectorClock=order_info['vector_lock']
                 )
@@ -67,14 +68,17 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
                 print("Received response from Suggestions service")
                 return suggestions_response
             else:
-                print('Invalid discount code. Did not pass fraud detetction.')
-                return fraud_detection.ResponseData(isSuccess=False)
+                error_message = 'Invalid discount code. Did not pass fraud detetction.'
+                print(error_message)
+                return suggestions.SuggestionsResponse(isSuccess=False, items=[], message=error_message)
         else:
-            print('order with id ' + order_id + ' has not been initialized!')
-            return fraud_detection.ResponseData(isSuccess=False)
+            error_message = 'order with id ' + order_id + ' has not been initialized!'
+            print(error_message)
+            return suggestions.SuggestionsResponse(isSuccess=False, items=[], message=error_message)
+            
         
 
-    def call_suggestions_service(self, request_data: suggestions.RequestData):
+    def call_suggestions_service(self, request_data: common.RequestData):
         # Establish a connection with the suggestions gRPC service.
         with grpc.insecure_channel('suggestions:50053') as channel:
             # Create a stub object.

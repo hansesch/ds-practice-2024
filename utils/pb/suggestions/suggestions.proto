@@ -24,5 +24,7 @@ message SuggestionsResponse {
         string title = 2;
         string author = 3;
     }
-    repeated SuggestedItem items = 1;
+    bool isSuccess = 1;
+    repeated SuggestedItem items = 2;
+    optional string message = 3;
 }

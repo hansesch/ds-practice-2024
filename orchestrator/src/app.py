@@ -17,6 +17,7 @@ utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions')
 sys.path.insert(1, utils_path)
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
 sys.path.insert(2, utils_path)
+import common_pb2 as common
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
 import suggestions_pb2 as suggestions
@@ -36,7 +37,6 @@ class Orchestrator:
 
 
     def initialize_services(self, data, orderId):
-
         with ThreadPoolExecutor(max_workers=3) as executor:
             order_data = self.get_transaction_verification_order_data(orderId, data)
             executor.submit(self.transaction_verification_service.InitializeOrder, order_data)
@@ -48,17 +48,14 @@ class Orchestrator:
             executor.submit(self.suggestions_service.InitializeOrder, order_data)
 
 
-    def process_order(self, order_data):
-        # This doesn't guarantee total uniqueness, but I think it's good enough for this example.
-        orderId = str(int(time.time())) + str(random.randint(100, 999))
+    def process_order(self, order_id, order_data):
         # Initialize the services with the order data
-        self.initialize_services(order_data, orderId)
-        request_data = transaction_verification.RequestData(
-            orderId=orderId,
+        self.initialize_services(order_data, order_id)
+        request_data = common.RequestData(
+            orderId=order_id,
             vectorClock=[0, 0, 0]
         )
-        verification_response = self.transaction_verification_service.VerifyTransaction(request_data)
-        return verification_response
+        return self.transaction_verification_service.VerifyCreditCardNumber(request_data)
 
 
     def get_transaction_verification_order_data(self, orderId, data):
@@ -140,32 +137,26 @@ def checkout():
     # Create an instance of the Orchestrator class
     orchestrator = Orchestrator()
 
+    # This doesn't guarantee total uniqueness, but I think it's good enough for this example.
+    order_id = str(int(time.time())) + str(random.randint(100, 999))
+
     # Process the order
-    orchestrator.process_order(data)
+    final_suggestion_response: suggestions.SuggestionsResponse = orchestrator.process_order(order_id, data)
 
-    if not is_transaction_valid:
-        print('Invalid transaction')
+    if not final_suggestion_response.isSuccess:
+        print('Invalid transaction' + final_suggestion_response.message)
         return {
-            'orderId': '12345',
-            'status': 'Order Declined'
-        }, 200  # HTTP status code for client error
-
-    fraud_detection_info = future_fraud.result()
-    if fraud_detection_info.isFraud:
-        print('Fraud detected')
+            'orderId': order_id,
+            'status': final_suggestion_response.message
+        }, 400  # HTTP status code for client error
+    else:
+        print('Checkout successful')
         return {
-            'orderId': '12345',
-            'status': fraud_detection_info.message
-        }, 200
+            'orderId': order_id,
+            'status': 'Order Approved',
+            'suggestedBooks': final_suggestion_response.items
+        }, 200  # HTTP status code for OK
     
-    suggested_books = future_suggestions.result()
-
-    print('Checkout successful')
-    return {
-        'orderId': '12345',
-        'status': 'Order Approved',
-        'suggestedBooks': suggested_books
-    }, 200  # HTTP status code for OK"""
 
 if __name__ == '__main__':
     # Run the app in debug mode to enable hot reloading.

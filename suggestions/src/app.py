@@ -9,10 +9,13 @@ import logging
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
 sys.path.insert(0, utils_path)
-utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/vector_clock'))
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/common'))
 sys.path.insert(1, utils_path)
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/vector_clock'))
+sys.path.insert(2, utils_path)
 import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
+import common_pb2 as common
 import vector_clock_utils as vector_clock_utils
 
 import grpc
@@ -35,7 +38,7 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
         print('Suggestions service: Initialized order with id ' + request.orderId + ', order data: ' + str(order_info['order_data']))
         return suggestions.ResponseData(isSuccess=True)
         
-    def SuggestItems(self, request: suggestions.RequestData, context):
+    def SuggestItems(self, request: common.RequestData, context):
         order_id = request.orderId
         print('Suggestions service: Suggesting books, orderId: ' + order_id + ' vector clock before operation: ' + str(self.orders[request.orderId]['vector_clock']))
 
@@ -49,7 +52,7 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
                                                                                 2)
             print("Suggestions service: vector clock after operation: " + str(order_info['vector_clock']))
             
-            response = suggestions.SuggestionsResponse()
+            response = suggestions.SuggestionsResponse(isSuccess=True)
             for suggestion in suggestion_result:
                 suggested_item = response.items.add()
                 suggested_item.bookId = suggestion['bookId']
@@ -57,8 +60,9 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
                 suggested_item.author = suggestion['author']
             return response
         else:
-            print('order with id ' + order_id + ' has not been initialized!')
-            return suggestions.ResponseData(isSuccess=False)
+            error_message = 'order with id ' + order_id + ' has not been initialized!'
+            print(error_message)
+            return suggestions.SuggestionsResponse(isSuccess=False, items=[], message=error_message)
 
 def serve():
     # Create a gRPC server
