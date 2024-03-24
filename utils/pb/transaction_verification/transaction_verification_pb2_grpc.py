@@ -2,9 +2,9 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from common import common_pb2 as common_dot_common__pb2
-from suggestions import suggestions_pb2 as suggestions_dot_suggestions__pb2
-from transaction_verification import transaction_verification_pb2 as transaction__verification_dot_transaction__verification__pb2
+from utils.pb.common import common_pb2 as utils_dot_pb_dot_common_dot_common__pb2
+from utils.pb.suggestions import suggestions_pb2 as utils_dot_pb_dot_suggestions_dot_suggestions__pb2
+from utils.pb.transaction_verification import transaction_verification_pb2 as utils_dot_pb_dot_transaction__verification_dot_transaction__verification__pb2
 
 
 class TransactionVerificationServiceStub(object):
@@ -18,23 +18,23 @@ class TransactionVerificationServiceStub(object):
         """
         self.InitializeOrder = channel.unary_unary(
                 '/transaction_verification.TransactionVerificationService/InitializeOrder',
-                request_serializer=transaction__verification_dot_transaction__verification__pb2.InitializationRequest.SerializeToString,
-                response_deserializer=common_dot_common__pb2.ResponseData.FromString,
+                request_serializer=utils_dot_pb_dot_transaction__verification_dot_transaction__verification__pb2.InitializationRequest.SerializeToString,
+                response_deserializer=utils_dot_pb_dot_common_dot_common__pb2.ResponseData.FromString,
                 )
         self.VerifyCreditCardNumber = channel.unary_unary(
                 '/transaction_verification.TransactionVerificationService/VerifyCreditCardNumber',
-                request_serializer=common_dot_common__pb2.RequestData.SerializeToString,
-                response_deserializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
+                request_serializer=utils_dot_pb_dot_common_dot_common__pb2.RequestData.SerializeToString,
+                response_deserializer=utils_dot_pb_dot_suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
                 )
         self.VerifyCreditCardExpiryDate = channel.unary_unary(
                 '/transaction_verification.TransactionVerificationService/VerifyCreditCardExpiryDate',
-                request_serializer=common_dot_common__pb2.RequestData.SerializeToString,
-                response_deserializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
+                request_serializer=utils_dot_pb_dot_common_dot_common__pb2.RequestData.SerializeToString,
+                response_deserializer=utils_dot_pb_dot_suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
                 )
         self.VerifyOrderItems = channel.unary_unary(
                 '/transaction_verification.TransactionVerificationService/VerifyOrderItems',
-                request_serializer=common_dot_common__pb2.RequestData.SerializeToString,
-                response_deserializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
+                request_serializer=utils_dot_pb_dot_common_dot_common__pb2.RequestData.SerializeToString,
+                response_deserializer=utils_dot_pb_dot_suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
                 )
 
 
@@ -70,23 +70,23 @@ def add_TransactionVerificationServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'InitializeOrder': grpc.unary_unary_rpc_method_handler(
                     servicer.InitializeOrder,
-                    request_deserializer=transaction__verification_dot_transaction__verification__pb2.InitializationRequest.FromString,
-                    response_serializer=common_dot_common__pb2.ResponseData.SerializeToString,
+                    request_deserializer=utils_dot_pb_dot_transaction__verification_dot_transaction__verification__pb2.InitializationRequest.FromString,
+                    response_serializer=utils_dot_pb_dot_common_dot_common__pb2.ResponseData.SerializeToString,
             ),
             'VerifyCreditCardNumber': grpc.unary_unary_rpc_method_handler(
                     servicer.VerifyCreditCardNumber,
-                    request_deserializer=common_dot_common__pb2.RequestData.FromString,
-                    response_serializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.SerializeToString,
+                    request_deserializer=utils_dot_pb_dot_common_dot_common__pb2.RequestData.FromString,
+                    response_serializer=utils_dot_pb_dot_suggestions_dot_suggestions__pb2.SuggestionsResponse.SerializeToString,
             ),
             'VerifyCreditCardExpiryDate': grpc.unary_unary_rpc_method_handler(
                     servicer.VerifyCreditCardExpiryDate,
-                    request_deserializer=common_dot_common__pb2.RequestData.FromString,
-                    response_serializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.SerializeToString,
+                    request_deserializer=utils_dot_pb_dot_common_dot_common__pb2.RequestData.FromString,
+                    response_serializer=utils_dot_pb_dot_suggestions_dot_suggestions__pb2.SuggestionsResponse.SerializeToString,
             ),
             'VerifyOrderItems': grpc.unary_unary_rpc_method_handler(
                     servicer.VerifyOrderItems,
-                    request_deserializer=common_dot_common__pb2.RequestData.FromString,
-                    response_serializer=suggestions_dot_suggestions__pb2.SuggestionsResponse.SerializeToString,
+                    request_deserializer=utils_dot_pb_dot_common_dot_common__pb2.RequestData.FromString,
+                    response_serializer=utils_dot_pb_dot_suggestions_dot_suggestions__pb2.SuggestionsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -110,8 +110,8 @@ class TransactionVerificationService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/transaction_verification.TransactionVerificationService/InitializeOrder',
-            transaction__verification_dot_transaction__verification__pb2.InitializationRequest.SerializeToString,
-            common_dot_common__pb2.ResponseData.FromString,
+            utils_dot_pb_dot_transaction__verification_dot_transaction__verification__pb2.InitializationRequest.SerializeToString,
+            utils_dot_pb_dot_common_dot_common__pb2.ResponseData.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -127,8 +127,8 @@ class TransactionVerificationService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/transaction_verification.TransactionVerificationService/VerifyCreditCardNumber',
-            common_dot_common__pb2.RequestData.SerializeToString,
-            suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
+            utils_dot_pb_dot_common_dot_common__pb2.RequestData.SerializeToString,
+            utils_dot_pb_dot_suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -144,8 +144,8 @@ class TransactionVerificationService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/transaction_verification.TransactionVerificationService/VerifyCreditCardExpiryDate',
-            common_dot_common__pb2.RequestData.SerializeToString,
-            suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
+            utils_dot_pb_dot_common_dot_common__pb2.RequestData.SerializeToString,
+            utils_dot_pb_dot_suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -161,7 +161,7 @@ class TransactionVerificationService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/transaction_verification.TransactionVerificationService/VerifyOrderItems',
-            common_dot_common__pb2.RequestData.SerializeToString,
-            suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
+            utils_dot_pb_dot_common_dot_common__pb2.RequestData.SerializeToString,
+            utils_dot_pb_dot_suggestions_dot_suggestions__pb2.SuggestionsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -16,6 +16,8 @@ utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detecti
 sys.path.insert(2, utils_path)
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/vector_clock'))
 sys.path.insert(3, utils_path)
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
+sys.path.insert(4, utils_path)
 import common_pb2 as common
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc

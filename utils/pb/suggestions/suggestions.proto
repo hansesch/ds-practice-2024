@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package suggestions;
 
-import "common/common.proto";
+import "utils/pb/common/common.proto";
 
 service SuggestionsService {
     rpc InitializeOrder(InitializationRequest) returns (common.ResponseData);

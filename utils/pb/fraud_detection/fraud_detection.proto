@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package fraud_detection;
 
-import "common/common.proto";
-import "suggestions/suggestions.proto";
+import "utils/pb/common/common.proto";
+import "utils/pb/suggestions/suggestions.proto";
 
 service FraudDetectionService {
     rpc InitializeOrder(InitializationRequest) returns (common.ResponseData);

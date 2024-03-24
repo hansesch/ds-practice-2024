@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package transaction_verification;
 
-import "common/common.proto";
-import "suggestions/suggestions.proto";
+import "utils/pb/common/common.proto";
+import "utils/pb/suggestions/suggestions.proto";
 
 service TransactionVerificationService {
     rpc InitializeOrder(InitializationRequest) returns (common.ResponseData);

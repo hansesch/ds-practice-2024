@@ -1,5 +1,5 @@
-from common import common_pb2 as _common_pb2
-from suggestions import suggestions_pb2 as _suggestions_pb2
+from utils.pb.common import common_pb2 as _common_pb2
+from utils.pb.suggestions import suggestions_pb2 as _suggestions_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
