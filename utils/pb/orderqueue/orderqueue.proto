@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package orderqueue;
+
+message Order {
+  string orderId = 1;
+}
+
+message Confirmation {
+  bool isSuccess = 1;
+  string message = 2;
+}
+
+service OrderQueueService {
+  rpc Enqueue(Order) returns (Confirmation) {}
+  rpc Dequeue(google.protobuf.Empty) returns (Order) {}
+}

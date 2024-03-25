@@ -20,6 +20,8 @@ utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions')
 sys.path.insert(2, utils_path)
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
 sys.path.insert(3, utils_path)
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/orderqueue'))
+sys.path.insert(4, utils_path)
 import common_pb2 as common
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
@@ -27,6 +29,8 @@ import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
+import orderqueue_pb2 as orderqueue
+import orderqueue_pb2_grpc as orderqueue_grpc
 import grpc
 
 class Orchestrator:
@@ -146,6 +150,8 @@ def checkout():
     # Process the order
     final_suggestion_response: suggestions.SuggestionsResponse = orchestrator.process_order(order_id, data)
 
+
+
     if not final_suggestion_response.isSuccess:
         print('Invalid transaction' + final_suggestion_response.message)
         return {
@@ -153,14 +159,22 @@ def checkout():
             'status': final_suggestion_response.message
         }, 200  
     else:
-        print('Checkout successful', final_suggestion_response)
-        suggested_books = [MessageToDict(item) for item in final_suggestion_response.items]
-        return {
+        with grpc.insecure_channel('orderqueue:50054') as channel:  
+            stub = orderqueue_grpc.OrderQueueServiceStub(channel)
+            confirmation = stub.Enqueue(orderqueue.Order(orderId=order_id))
+        if confirmation.isSuccess:
+            print('Checkout successful', final_suggestion_response)
+            suggested_books = [MessageToDict(item) for item in final_suggestion_response.items]
+            return {
+                'orderId': order_id,
+                'status': 'Order Approved',
+                'suggestedBooks': suggested_books
+            }, 200
+        else:
+            return {
             'orderId': order_id,
-            'status': 'Order Approved',
-            'suggestedBooks': suggested_books
-        }, 200  # HTTP status code for OK
-    
+            'status': 'Failed to enqueue order'
+            }, 500    
 
 if __name__ == '__main__':
     # Run the app in debug mode to enable hot reloading.
