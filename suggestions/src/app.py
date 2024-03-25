@@ -36,7 +36,7 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
         }
         self.orders[request.orderId] = order_info
         print('Suggestions service: Initialized order with id ' + request.orderId + ', order data: ' + str(order_info['order_data']))
-        return suggestions.ResponseData(isSuccess=True)
+        return common.ResponseData(isSuccess=True)
         
     def SuggestItems(self, request: common.RequestData, context):
         order_id = request.orderId
@@ -46,7 +46,7 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
             order_info = self.orders[order_id]
 
             suggestion_result = get_suggestions(order_info['order_data']['items'])
-
+            print('Got Suggestions: ', suggestion_result)
             order_info['vector_clock'] = vector_clock_utils.update_vector_clock(order_info['vector_clock'], 
                                                                                 request.vectorClock, 
                                                                                 2)
@@ -82,6 +82,7 @@ def serve():
 def get_suggestions(purchased_items):
     suggestions = []
     category = purchased_items[0].name.replace('_', ' ').lower()
+    print(f"Fetching suggestions for category: {category}")
     url = f"https://openlibrary.org/subjects/{category}.json?limit=3"
     try:
         response = requests.get(url)

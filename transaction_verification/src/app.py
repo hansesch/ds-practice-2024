@@ -63,7 +63,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             credit_card_number = order_info['order_data']['credit_card_info'].number
             is_valid = re.fullmatch(r'\d{16}', credit_card_number) is not None
             if is_valid:
-                return self.VerifyCreditCardExpiryDate(common.RequestData(orderId=order_id, vectorClock=order_info['vector_clock']))
+                return self.VerifyCreditCardExpiryDate(common.RequestData(orderId=order_id, vectorClock=order_info['vector_clock']), context)
         else:
             error_message = 'order with id ' + order_id + ' has not been initialized!'
             print(error_message)
@@ -87,7 +87,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             except ValueError:
                 is_valid = False
             if is_valid:
-                return self.VerifyOrderItems(common.RequestData(orderId=order_id, vectorClock=order_info['vector_clock']))
+                return self.VerifyOrderItems(common.RequestData(orderId=order_id, vectorClock=order_info['vector_clock']), context)
             else:
                 return suggestions.SuggestionsResponse(isSuccess=False, items=[], message="Credit card is expired!")
         else:

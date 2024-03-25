@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from flask import Flask, request
 from flask_cors import CORS
+from google.protobuf.json_format import MessageToDict
 
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
@@ -103,7 +104,7 @@ class Orchestrator:
         )
         for item in data['items']:
             transaction_item = suggestions.TransactionItem(
-                name=item['name']
+                name=item['category']
             )
             suggestions_request.items.extend([transaction_item])
         return suggestions_request
@@ -150,13 +151,14 @@ def checkout():
         return {
             'orderId': order_id,
             'status': final_suggestion_response.message
-        }, 400  # HTTP status code for client error
+        }, 200  
     else:
-        print('Checkout successful')
+        print('Checkout successful', final_suggestion_response)
+        suggested_books = [MessageToDict(item) for item in final_suggestion_response.items]
         return {
             'orderId': order_id,
             'status': 'Order Approved',
-            'suggestedBooks': final_suggestion_response.items
+            'suggestedBooks': suggested_books
         }, 200  # HTTP status code for OK
     
 
@@ -164,4 +166,4 @@ if __name__ == '__main__':
     # Run the app in debug mode to enable hot reloading.
     # This is useful for development.
     # The default port is 5000.
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', debug=True)
