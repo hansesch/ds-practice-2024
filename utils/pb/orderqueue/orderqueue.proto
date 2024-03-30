@@ -6,6 +6,7 @@ package orderqueue;
 
 message Order {
   string orderId = 1;
+  int32 orderQuantity = 2;
 }
 
 message Confirmation {

@@ -116,3 +116,27 @@ services:
     volumes:
       - ./utils:/app/utils
       - ./orderqueue/src:/app/orderqueue/src
+  orderexecutor:
+    build: 
+      context: ./
+      dockerfile: ./orderexecutor/Dockerfile
+    ports:
+      - 50055
+    environment:
+      - PYTHONUNBUFFERED=TRUE
+      - PYTHONFILE=/app/orderexecutor/src/app.py
+    volumes:
+      - ./utils:/app/utils
+      - ./orderexecutor/src:/app/orderexecutor/src
+  coordinator:
+    build: 
+      context: ./
+      dockerfile: ./coordinator/Dockerfile
+    ports:
+      - 50056:50056
+    environment:
+      - PYTHONUNBUFFERED=TRUE
+      - PYTHONFILE=/app/coordinator/src/app.py
+    volumes:
+      - ./utils:/app/utils
+      - ./coordinator/src:/app/coordinator/src

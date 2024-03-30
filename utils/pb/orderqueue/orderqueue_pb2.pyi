@@ -6,10 +6,12 @@ from typing import ClassVar as _ClassVar, Optional as _Optional
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Order(_message.Message):
-    __slots__ = ("orderId",)
+    __slots__ = ("orderId", "orderQuantity")
     ORDERID_FIELD_NUMBER: _ClassVar[int]
+    ORDERQUANTITY_FIELD_NUMBER: _ClassVar[int]
     orderId: str
-    def __init__(self, orderId: _Optional[str] = ...) -> None: ...
+    orderQuantity: int
+    def __init__(self, orderId: _Optional[str] = ..., orderQuantity: _Optional[int] = ...) -> None: ...
 
 class Confirmation(_message.Message):
     __slots__ = ("isSuccess", "message")

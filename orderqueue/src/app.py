@@ -2,6 +2,7 @@ import grpc
 from concurrent import futures
 import sys
 import os
+import bisect
 
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/orderqueue'))
@@ -15,26 +16,26 @@ class OrderQueueService(orderqueue_grpc.OrderQueueServiceServicer):
     self.queue = []
 
   def Enqueue(self, request, context):
-    self.queue.append(request)
+    print(f"Order {request.orderId} enqueued")
+    bisect.insort(self.queue, (request.orderQuantity, request))
     return orderqueue.Confirmation(isSuccess=True, message="Order enqueued")
 
   def Dequeue(self, request, context):
-    if not self.queue:
-      context.abort(grpc.StatusCode.NOT_FOUND, "No orders in queue")
-    return self.queue.pop(0)
-  
+    if self.queue:
+        _, order = self.queue.pop(0)
+        print(f"Order {order.orderId} dequeued")
+        return order
+    else:
+        print("No orders in the queue.")
+        return orderqueue.Order()  # Return an empty Order object
+
 def serve():
-    # Create a gRPC server
     server = grpc.server(futures.ThreadPoolExecutor())
-    # Add HelloService
     orderqueue_grpc.add_OrderQueueServiceServicer_to_server(OrderQueueService(), server)
-    # Listen on port 50054
     port = "50054"
     server.add_insecure_port("[::]:" + port)
-    # Start the server
     server.start()
     print("Order Queue service server started. Listening on port 50054.")
-    # Keep thread alive
     server.wait_for_termination()
 
 if __name__ == '__main__':

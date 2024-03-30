@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package coordinator;
+import "google/protobuf/empty.proto";
+
+service CoordinatorService {
+  rpc Request(google.protobuf.Empty) returns (Message) {}
+  rpc Release(google.protobuf.Empty) returns (Message) {}
+}
+
+message Message {
+  bool isSuccess = 1;
+}

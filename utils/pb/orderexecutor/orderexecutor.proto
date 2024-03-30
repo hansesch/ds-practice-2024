@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+package orderexecutor;
+
+service OrderExecutorService {
+}
