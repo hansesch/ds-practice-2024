@@ -63,7 +63,11 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             credit_card_number = order_info['order_data']['credit_card_info'].number
             is_valid = re.fullmatch(r'\d{16}', credit_card_number) is not None
             if is_valid:
+                print('Credit card number ' + credit_card_number + ' is valid')
                 return self.VerifyCreditCardExpiryDate(common.RequestData(orderId=order_id, vectorClock=order_info['vector_clock']), context)
+            else:
+                print('Credit card number ' + credit_card_number + ' is not valid!')
+                return suggestions.SuggestionsResponse(isSuccess=False, items=[], message='Credit card number is not valid!')
         else:
             error_message = 'order with id ' + order_id + ' has not been initialized!'
             print(error_message)

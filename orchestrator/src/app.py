@@ -156,25 +156,30 @@ def checkout():
     final_suggestion_response: suggestions.SuggestionsResponse = orchestrator.process_order(order_id, data)
 
     if not final_suggestion_response.isSuccess:
-        print('Invalid transaction' + final_suggestion_response.message)
+        print('Invalid transaction: ' + final_suggestion_response.message)
         return {
             'orderId': order_id,
             'status': final_suggestion_response.message
         }, 200  
     else:
+        suggested_books = [MessageToDict(item) for item in final_suggestion_response.items]
+
+        print('Transaction is valid, received suggested books:')
+        print(suggested_books)
+        print('Putting order ' + order_id + ' into order queue')
         with grpc.insecure_channel('orderqueue:50054') as channel:  
             stub = orderqueue_grpc.OrderQueueServiceStub(channel)
             total_items = sum([item['quantity'] for item in data['items']])
-            confirmation = stub.Enqueue(orderqueue.Order(orderId=order_id, orderQuantity=total_items))
+            confirmation: orderqueue.Confirmation = stub.Enqueue(orderqueue.Order(orderId=order_id, orderQuantity=total_items))
         if confirmation.isSuccess:
-            print('Checkout successful', final_suggestion_response)
-            suggested_books = [MessageToDict(item) for item in final_suggestion_response.items]
+            print('Received confirmation from order queue about order enqueueing')
             return {
                 'orderId': order_id,
                 'status': 'Order Approved',
                 'suggestedBooks': suggested_books
             }, 200
         else:
+            print('order queue failed to enqueue order!')
             return {
             'orderId': order_id,
             'status': 'Failed to enqueue order'

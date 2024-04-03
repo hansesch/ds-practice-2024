@@ -22,10 +22,10 @@ class CoordinatorService(coordinator_grpc.CoordinatorServiceServicer):
             print("Access denied.")
             return coordinator.Message(isSuccess=False)
         else:
-            print("Access granted.")
             self.isLock = True
             self.lock_timer = threading.Timer(60.0, self.auto_release)
             self.lock_timer.start()
+            print("Access granted.")
             return coordinator.Message(isSuccess=True)
 
     def Release(self, request, context):
@@ -34,8 +34,10 @@ class CoordinatorService(coordinator_grpc.CoordinatorServiceServicer):
             self.isLock = False
             if self.lock_timer is not None:
                 self.lock_timer.cancel()
+            print('Release granted.')
             return coordinator.Message(isSuccess=True)
         else:
+            print('Release denied - nothing to release')
             return coordinator.Message(isSuccess=False)
 
     def auto_release(self):

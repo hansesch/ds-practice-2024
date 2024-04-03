@@ -15,7 +15,7 @@ class OrderQueueService(orderqueue_grpc.OrderQueueServiceServicer):
   def __init__(self):
     self.queue = []
 
-  def Enqueue(self, request, context):
+  def Enqueue(self, request: orderqueue.Order, context):
     print(f"Order {request.orderId} enqueued")
     bisect.insort(self.queue, (request.orderQuantity, request))
     return orderqueue.Confirmation(isSuccess=True, message="Order enqueued")
