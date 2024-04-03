@@ -42,13 +42,13 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
       request_access = self.coordinator_stub.Request(Empty())
       if request_access.isSuccess:
         order: orderqueue.Order = self.orderqueue_stub.Dequeue(Empty())
+        self.coordinator_stub.Release(Empty())
         if order.orderId:
           print(f"Order {order.orderId} is being executed by replica with ID {self.id}...")
           time.sleep(5) # To simulate the time taken to execute the order
           print(f"Execution of order {order.orderId} has finished by replica with ID {self.id}...")
         else:
           print(f"{self.id} Executor: No orders in the queue. Waiting for new orders...")
-        self.coordinator_stub.Release(Empty())
       else:
         print(f"{self.id} Executor: Another replica is currently leader. Waiting for my turn...")
       time.sleep(5)
