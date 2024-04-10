@@ -140,3 +140,15 @@ services:
     volumes:
       - ./utils:/app/utils
       - ./coordinator/src:/app/coordinator/src
+  database:
+    build: 
+      context: ./
+      dockerfile: ./database/Dockerfile
+    ports:
+      - 50057
+    environment:
+      - PYTHONUNBUFFERED=TRUE
+      - PYTHONFILE=/app/database/src/app.py
+    volumes:
+      - ./utils:/app/utils
+      - ./database/src:/app/database/src
