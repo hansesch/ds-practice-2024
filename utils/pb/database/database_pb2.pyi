@@ -25,7 +25,7 @@ class WriteRequest(_message.Message):
     def __init__(self, title: _Optional[str] = ..., stockValue: _Optional[int] = ...) -> None: ...
 
 class WriteResponse(_message.Message):
-    __slots__ = ("stockValue",)
-    STOCKVALUE_FIELD_NUMBER: _ClassVar[int]
-    stockValue: int
-    def __init__(self, stockValue: _Optional[int] = ...) -> None: ...
+    __slots__ = ("isSuccess",)
+    ISSUCCESS_FIELD_NUMBER: _ClassVar[int]
+    isSuccess: bool
+    def __init__(self, isSuccess: bool = ...) -> None: ...

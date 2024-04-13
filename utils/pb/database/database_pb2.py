@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x64\x61tabase.proto\x12\x08\x64\x61tabase\"\x1c\n\x0bReadRequest\x12\r\n\x05title\x18\x01 \x01(\t\"\"\n\x0cReadResponse\x12\x12\n\nstockValue\x18\x01 \x01(\x05\"1\n\x0cWriteRequest\x12\r\n\x05title\x18\x01 \x01(\t\x12\x12\n\nstockValue\x18\x02 \x01(\x05\"#\n\rWriteResponse\x12\x12\n\nstockValue\x18\x01 \x01(\x05\x32\x82\x01\n\x0f\x44\x61tabaseService\x12\x35\n\x04Read\x12\x15.database.ReadRequest\x1a\x16.database.ReadResponse\x12\x38\n\x05Write\x12\x16.database.WriteRequest\x1a\x17.database.WriteResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x64\x61tabase.proto\x12\x08\x64\x61tabase\"\x1c\n\x0bReadRequest\x12\r\n\x05title\x18\x01 \x01(\t\"\"\n\x0cReadResponse\x12\x12\n\nstockValue\x18\x01 \x01(\x05\"1\n\x0cWriteRequest\x12\r\n\x05title\x18\x01 \x01(\t\x12\x12\n\nstockValue\x18\x02 \x01(\x05\"\"\n\rWriteResponse\x12\x11\n\tisSuccess\x18\x01 \x01(\x08\x32\x82\x01\n\x0f\x44\x61tabaseService\x12\x35\n\x04Read\x12\x15.database.ReadRequest\x1a\x16.database.ReadResponse\x12\x38\n\x05Write\x12\x16.database.WriteRequest\x1a\x17.database.WriteResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -28,7 +28,7 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_WRITEREQUEST']._serialized_start=94
   _globals['_WRITEREQUEST']._serialized_end=143
   _globals['_WRITERESPONSE']._serialized_start=145
-  _globals['_WRITERESPONSE']._serialized_end=180
-  _globals['_DATABASESERVICE']._serialized_start=183
-  _globals['_DATABASESERVICE']._serialized_end=313
+  _globals['_WRITERESPONSE']._serialized_end=179
+  _globals['_DATABASESERVICE']._serialized_start=182
+  _globals['_DATABASESERVICE']._serialized_end=312
 # @@protoc_insertion_point(module_scope)
