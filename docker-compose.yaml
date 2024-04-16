@@ -152,3 +152,21 @@ services:
     volumes:
       - ./utils:/app/utils
       - ./database/src:/app/database/src
+  redis1:
+    image: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - ./data1:/data
+  redis2:
+    image: redis
+    ports:
+      - 6380:6379
+    volumes:
+      - ./data2:/data
+  redis3:
+    image: redis
+    ports:
+      - 6381:6379
+    volumes:
+      - ./data3:/data

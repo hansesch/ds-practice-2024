@@ -2,6 +2,7 @@ import grpc
 import sys
 import os
 from concurrent import futures
+import redis 
 
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/database'))
@@ -13,21 +14,24 @@ import database_pb2_grpc as database_grpc
 
 class DatabaseService(database_grpc.DatabaseServiceServicer):
     def __init__(self):
-        self.data = {
-            'Book 1': 3,
-            'Book 2': 4
-        }
+        self.redis_clients = [
+            redis.Redis(host='redis1', port=6379, db=0),
+            redis.Redis(host='redis2', port=6380, db=0),
+            redis.Redis(host='redis3', port=6381, db=0)
+        ]
 
     def Read(self, request: database.ReadRequest, context):
-        if request.title in self.data:
-            return database.ReadResponse(stockValue=self.data[request.title])
+        value = self.redis_clients[0].get(request.title)
+        if value is not None:
+            return database.ReadResponse(stockValue=int(value))
         else:
             return database.ReadResponse(stockValue=0)
     
     def Write(self, request: database.WriteRequest, context):
-        self.data[request.title] = request.stockValue
+        # Write to all Redis databases
+        for client in self.redis_clients:
+            client.set(request.title, request.stockValue)
         return database.WriteResponse(isSuccess=True)
-
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor())
