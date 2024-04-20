@@ -1,23 +1,17 @@
 import sys
 import os
 import time
-import logging
+from concurrent import futures
 
-# This set of lines are needed to import the gRPC stubs.
-# The path of the stubs is relative to the current file, or absolute inside the container.
-# Change these lines only if strictly needed.
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/payment'))
 sys.path.insert(1, utils_path)
-import vector_clock_utils as vector_clock_utils
+
 import payment_pb2 as payment
 import payment_pb2_grpc as payment_grpc
-
 import grpc
-from concurrent import futures
 
-# Create a class to define the server functions, derived from
-# fraud_detection_pb2_grpc.FraudDetectionServiceServicer
+
 class PaymentService(payment_grpc.PaymentServiceServicer):
     order_statuses = dict()
 

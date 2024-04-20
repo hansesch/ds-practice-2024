@@ -1,12 +1,10 @@
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
-
 package payment;
 
 service PaymentService {
     rpc PreparePayment(PrepareRequest) returns (PrepareResponse);
-    rpc CommitPayment(CommitRequest) returns (google.protobuf.Empty);
+    rpc CommitPayment(CommitRequest) returns (CommitResponse);
 }
 
 message PrepareRequest {
