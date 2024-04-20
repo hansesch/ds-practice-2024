@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package payment;
+
+service PaymentService {
+    rpc PreparePayment(PrepareRequest) returns (PrepareResponse);
+    rpc CommitPayment(CommitRequest) returns (google.protobuf.Empty);
+}
+
+message PrepareRequest {
+    string orderId = 1;
+}
+
+message PrepareResponse {
+    bool isReady = 1;
+}
+
+message CommitRequest {
+    string orderId = 1;
+}
+
+message CommitResponse {
+    bool isSuccess = 1;
+}

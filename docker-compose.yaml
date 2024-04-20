@@ -170,3 +170,15 @@ services:
       - 6381:6379
     volumes:
       - ./data3:/data
+  payment:
+    build: 
+      context: ./
+      dockerfile: ./payment/Dockerfile
+    ports:
+      - 50058
+    environment:
+      - PYTHONUNBUFFERED=TRUE
+      - PYTHONFILE=/app/payment/src/app.py
+    volumes:
+      - ./utils:/app/utils
+      - ./payment/src:/app/payment/src
