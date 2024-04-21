@@ -170,7 +170,9 @@ def checkout():
         with grpc.insecure_channel('orderqueue:50054') as channel:  
             stub = orderqueue_grpc.OrderQueueServiceStub(channel)
             total_items = sum([item['quantity'] for item in data['items']])
-            confirmation: orderqueue.Confirmation = stub.Enqueue(orderqueue.Order(orderId=order_id, orderQuantity=total_items))
+            order_items = [orderqueue.OrderItem(id=item['id'], quantity=item['quantity']) for item in data['items']]
+
+            confirmation: orderqueue.Confirmation = stub.Enqueue(orderqueue.Order(orderId=order_id, items=order_items, orderQuantity=total_items))
         if confirmation.isSuccess:
             print('Received confirmation from order queue about order enqueueing')
             return {

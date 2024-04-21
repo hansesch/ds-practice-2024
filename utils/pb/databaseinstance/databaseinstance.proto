@@ -1,11 +1,10 @@
 syntax = "proto3";
 
-package database;
+package databaseinstance;
 
-service DatabaseService {
+service DatabaseInstanceService {
     rpc Read(ReadRequest) returns (ReadResponse);
     rpc Write(WriteRequest) returns (WriteResponse);
-    rpc DecrementStock(DecrementStockRequest) returns (DecrementStockResponse);
 }
 
 message ReadRequest {
@@ -19,17 +18,12 @@ message ReadResponse {
 message WriteRequest {
     string id = 1;
     int32 stockValue = 2;
+    repeated string hosts = 3;
+    repeated string ports = 4;
 }
 
 message WriteResponse {
   bool isSuccess = 1;
-}
-
-message DecrementStockRequest {
-    string id = 1;
-    int32 decrement = 2;
-}
-
-message DecrementStockResponse {
-  bool isSuccess = 1;
+  string failedhost = 2;
+  string failedport = 3;
 }

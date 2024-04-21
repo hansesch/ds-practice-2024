@@ -2,7 +2,6 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 from utils.pb.payment import payment_pb2 as utils_dot_pb_dot_payment_dot_payment__pb2
 
 
@@ -23,7 +22,7 @@ class PaymentServiceStub(object):
         self.CommitPayment = channel.unary_unary(
                 '/payment.PaymentService/CommitPayment',
                 request_serializer=utils_dot_pb_dot_payment_dot_payment__pb2.CommitRequest.SerializeToString,
-                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                response_deserializer=utils_dot_pb_dot_payment_dot_payment__pb2.CommitResponse.FromString,
                 )
 
 
@@ -53,7 +52,7 @@ def add_PaymentServiceServicer_to_server(servicer, server):
             'CommitPayment': grpc.unary_unary_rpc_method_handler(
                     servicer.CommitPayment,
                     request_deserializer=utils_dot_pb_dot_payment_dot_payment__pb2.CommitRequest.FromString,
-                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                    response_serializer=utils_dot_pb_dot_payment_dot_payment__pb2.CommitResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -95,6 +94,6 @@ class PaymentService(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/payment.PaymentService/CommitPayment',
             utils_dot_pb_dot_payment_dot_payment__pb2.CommitRequest.SerializeToString,
-            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            utils_dot_pb_dot_payment_dot_payment__pb2.CommitResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

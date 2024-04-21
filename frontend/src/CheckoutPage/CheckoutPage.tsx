@@ -30,22 +30,22 @@ const CheckoutPage: React.FC = () => {
     const book = location.state;
 
     const [formData, setFormData] = useState<CheckoutForm>({
-        userName: '',
-        userContact: '',
-        creditCardNumber: '',
-        creditCardExpirationDate: '',
-        creditCardCVV: '',
-        userComment: '',
+        userName: 'Lugeja',
+        userContact: 'Pole',
+        creditCardNumber: '1111222233334444',
+        creditCardExpirationDate: '12/25',
+        creditCardCVV: '112',
+        userComment: 'No Comment',
         discountCode: '',
-        shippingMethod: '',
+        shippingMethod: 'Basic',
         giftMessage: '',
-        billingAddressStreet: '',
-        billingAddressCity: '',
-        billingAddressState: '',
-        billingAddressZip: '',
+        billingAddressStreet: 'Riia 1',
+        billingAddressCity: 'Tartu',
+        billingAddressState: 'Tartumaa',
+        billingAddressZip: '50105',
         billingAddressCountry: 'Select a country',
         giftWrapping: false,
-        termsAndConditionsAccepted: false
+        termsAndConditionsAccepted: true
     });    
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -75,7 +75,8 @@ const CheckoutPage: React.FC = () => {
                     {
                         name: book.title,
                         quantity: 1,
-                        category: book.category
+                        category: book.category,
+                        id: book.id
                     },
                 ],
                 discountCode: formData.discountCode,

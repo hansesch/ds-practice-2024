@@ -14,7 +14,11 @@ utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/orderqueue'))
 sys.path.insert(1, utils_path)
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/coordinator'))
 sys.path.insert(2, utils_path)
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/database'))
+sys.path.insert(3, utils_path)
 
+import database_pb2 as database
+import database_pb2_grpc as database_grpc
 import orderexecutor_pb2 as orderexecutor
 import orderexecutor_pb2_grpc as orderexecutor_grpc
 import orderqueue_pb2 as orderqueue
@@ -37,14 +41,22 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
     channel = grpc.insecure_channel('coordinator:50056')
     self.coordinator_stub = coordinator_grpc.CoordinatorServiceStub(channel)
 
+  def update_database(self, order):
+    for item in order.items:
+      with grpc.insecure_channel(f'database:50057') as channel:
+        stub = database_grpc.DatabaseServiceStub(channel)
+        stub.DecrementStock(database.DecrementStockRequest(id=item.id, decrement=item.quantity))
+
   def check_and_execute_order(self):
     while True:
+      time.sleep(5)
       request_access = self.coordinator_stub.Request(Empty())
       if request_access.isSuccess:
         order: orderqueue.Order = self.orderqueue_stub.Dequeue(Empty())
         self.coordinator_stub.Release(Empty())
         if order.orderId:
           print(f"Order {order.orderId} is being executed by replica with ID {self.id}...")
+          self.update_database(order)
           time.sleep(5) # To simulate the time taken to execute the order
           print(f"Execution of order {order.orderId} has finished by replica with ID {self.id}...")
         else:
