@@ -22,6 +22,8 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         self.hosts = ["databaseinstance1", "databaseinstance2", "databaseinstance3", "databaseinstance4"]
         self.ports = ["50045", "50046", "50047", "50048"]
         self.locks = {}
+        self.write_order_statuses = dict()
+        self.decrement_order_statuses = dict()
 
     def get_lock(self, id):
         if id not in self.locks:
@@ -43,21 +45,42 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
                 self.hosts.pop()
         raise Exception("All database instances are down.")
     
-    def Write(self, request: database.WriteRequest, context):
-        with self.get_lock(request.id):
+    def PrepareWrite(self, request: database.PrepareWriteRequest, context):
+        if request.id in self.write_order_statuses:
+            print(f"Write operation for order {request.id} cannot be prepared because it is already in state {self.write_order_statuses[request.id]['status']}")
+            return database.PrepareResponse(isReady=False)
+        
+        self.write_order_statuses[request.id] = {
+            'status': 'ready',
+            'stockValue': request.stockValue
+        }
+        return database.PrepareResponse(isReady=True)
+    
+    def CommitWrite(self, request: database.CommitRequest, context):
+        if request.id not in self.write_order_statuses:
+            print(f"Write operation for order {request.id} cannot be commited because it has not been prepared")
+            return database.CommitResponse(isSuccess=False)
+        elif self.write_order_statuses[request.id]['status'] == 'completed':
+            print(f"Write operation for order {request.id} cannot be commited because it has already been completed")
+            return database.CommitResponse(isSuccess=False)
+        self.Write(request.id, self.write_order_statuses[request.id]['stockValue'])
+        
+        
+    def Write(self, orderId, stockValue):
+        with self.get_lock(orderId):
             while self.hosts:
                 try:
                     # Attempt to forward the write request to the head of the chain
                     with grpc.insecure_channel(f'{self.hosts[0]}:{self.ports[0]}') as channel:
                         stub = databaseinstance_grpc.DatabaseInstanceServiceStub(channel)
-                        response = stub.Write(databaseinstance.WriteRequest(id=request.id, stockValue=request.stockValue, hosts=self.hosts[1:], ports=self.ports[1:]))
-                    if response.isSuccess:
-                        return database.WriteResponse(isSuccess=True)
-                    else:
-                        print(f"Failed to connect to databaseinstance:{response.failedhost}:{response.failedport}. Removing from list.")
-                        # If the call fails, remove the failed port from the list and retry
-                        self.hosts.remove(response.failedhost)
-                        self.ports.remove(response.failedport)
+                        response: databaseinstance.WriteResponse = stub.Write(databaseinstance.WriteRequest(id=orderId, stockValue=stockValue, hosts=self.hosts[1:], ports=self.ports[1:]))
+                        if response.isSuccess:
+                            return database.CommitResponse(isSuccess=True)
+                        else:
+                            print(f"Failed to connect to databaseinstance:{response.failedhost}:{response.failedport}. Removing from list.")
+                            # If the call fails, remove the failed port from the list and retry
+                            self.hosts.remove(response.failedhost)
+                            self.ports.remove(response.failedport)
                 except grpc.RpcError as e:
                     # If the call fails, remove the failed port from the list and retry
                     print(f"Failed to connect to the head database instance:{self.hosts[0]}:{self.ports[0]}. Removing from list.")
@@ -66,13 +89,31 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             # If all instances fail, raise an exception
             raise Exception("All database instances are down.")
 
+    def PrepareDecrementStock(self, request: database.PrepareDecrementStockRequest, context):
+        if request.id in self.decrement_order_statuses:
+            print(f"Decrement operation for order {request.id} cannot be prepared because it is already in state {self.decrement_order_statuses[request.id]['status']}")
+            return database.PrepareResponse(isReady=False)
+        
+        self.decrement_order_statuses[request.id] = {
+            'status': 'ready',
+            'decrement': request.decrement
+        }
+        return database.PrepareResponse(isReady=True)
 
-    def DecrementStock(self, request: database.DecrementStockRequest, context):
-        print(f"Decrement stock request received for ID {request.id}, decrementing by {request.decrement}.")
+    def CommitDecrementStock(self, request: database.CommitRequest, context):
+        if request.id not in self.decrement_order_statuses:
+            print(f"Decrement operation for order {request.id} cannot be commited because it has not been prepared")
+            return database.CommitResponse(isSuccess=False)
+        elif self.decrement_order_statuses[request.id]['status'] == 'completed':
+            print(f"Decrement operation for order {request.id} cannot be commited because it has already been completed")
+            return database.CommitResponse(isSuccess=False)
+        
+        decrement_value = self.decrement_order_statuses[request.id]['decrement']
+        print(f"Decrement stock request received for ID {request.id}, decrementing by {decrement_value}.")
         current_value = self.Read(database.ReadRequest(id=request.id), context)
-        new_stock_value = current_value.stockValue - request.decrement
-        self.Write(database.WriteRequest(id=request.id, stockValue=new_stock_value), context)
-        return database.DecrementStockResponse(isSuccess=True)
+        new_stock_value = current_value.stockValue - decrement_value
+        self.Write(id=request.id, stockValue=new_stock_value)
+        return database.CommitResponse(isSuccess=True)
     
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor())
