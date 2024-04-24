@@ -16,7 +16,25 @@ class ReadResponse(_message.Message):
     stockValue: int
     def __init__(self, stockValue: _Optional[int] = ...) -> None: ...
 
-class WriteRequest(_message.Message):
+class PrepareResponse(_message.Message):
+    __slots__ = ("isReady",)
+    ISREADY_FIELD_NUMBER: _ClassVar[int]
+    isReady: bool
+    def __init__(self, isReady: bool = ...) -> None: ...
+
+class CommitRequest(_message.Message):
+    __slots__ = ("id",)
+    ID_FIELD_NUMBER: _ClassVar[int]
+    id: str
+    def __init__(self, id: _Optional[str] = ...) -> None: ...
+
+class CommitResponse(_message.Message):
+    __slots__ = ("isSuccess",)
+    ISSUCCESS_FIELD_NUMBER: _ClassVar[int]
+    isSuccess: bool
+    def __init__(self, isSuccess: bool = ...) -> None: ...
+
+class PrepareWriteRequest(_message.Message):
     __slots__ = ("id", "stockValue")
     ID_FIELD_NUMBER: _ClassVar[int]
     STOCKVALUE_FIELD_NUMBER: _ClassVar[int]
@@ -24,22 +42,10 @@ class WriteRequest(_message.Message):
     stockValue: int
     def __init__(self, id: _Optional[str] = ..., stockValue: _Optional[int] = ...) -> None: ...
 
-class WriteResponse(_message.Message):
-    __slots__ = ("isSuccess",)
-    ISSUCCESS_FIELD_NUMBER: _ClassVar[int]
-    isSuccess: bool
-    def __init__(self, isSuccess: bool = ...) -> None: ...
-
-class DecrementStockRequest(_message.Message):
+class PrepareDecrementStockRequest(_message.Message):
     __slots__ = ("id", "decrement")
     ID_FIELD_NUMBER: _ClassVar[int]
     DECREMENT_FIELD_NUMBER: _ClassVar[int]
     id: str
     decrement: int
     def __init__(self, id: _Optional[str] = ..., decrement: _Optional[int] = ...) -> None: ...
-
-class DecrementStockResponse(_message.Message):
-    __slots__ = ("isSuccess",)
-    ISSUCCESS_FIELD_NUMBER: _ClassVar[int]
-    isSuccess: bool
-    def __init__(self, isSuccess: bool = ...) -> None: ...

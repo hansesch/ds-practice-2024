@@ -4,8 +4,10 @@ package database;
 
 service DatabaseService {
     rpc Read(ReadRequest) returns (ReadResponse);
-    rpc Write(WriteRequest) returns (WriteResponse);
-    rpc DecrementStock(DecrementStockRequest) returns (DecrementStockResponse);
+    rpc PrepareWrite(PrepareWriteRequest) returns (PrepareResponse);
+    rpc CommitWrite(CommitRequest) returns (CommitResponse);
+    rpc PrepareDecrementStock(PrepareDecrementStockRequest) returns (PrepareResponse);
+    rpc CommitDecrementStock(CommitRequest) returns (CommitResponse);
 }
 
 message ReadRequest {
@@ -16,20 +18,24 @@ message ReadResponse {
     int32 stockValue = 1;
 }
 
-message WriteRequest {
+message PrepareResponse {
+  bool isReady = 1;
+}
+
+message CommitRequest {
+    string id = 1;
+}
+
+message CommitResponse {
+    bool isSuccess = 1;
+}
+
+message PrepareWriteRequest {
     string id = 1;
     int32 stockValue = 2;
 }
 
-message WriteResponse {
-  bool isSuccess = 1;
-}
-
-message DecrementStockRequest {
+message PrepareDecrementStockRequest {
     string id = 1;
     int32 decrement = 2;
-}
-
-message DecrementStockResponse {
-  bool isSuccess = 1;
 }
