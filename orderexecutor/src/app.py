@@ -45,7 +45,13 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
     for item in order.items:
       with grpc.insecure_channel(f'database:50057') as channel:
         stub = database_grpc.DatabaseServiceStub(channel)
-        stub.DecrementStock(database.DecrementStockRequest(id=item.id, decrement=item.quantity))
+        PrepareResponse = stub.PrepareDecrementStock(database.PrepareDecrementStockRequest(id=item.id, decrement=item.quantity))
+        if PrepareResponse.isReady:
+          CommitResponse = stub.CommitDecrementStock(database.CommitRequest(id=item.id))
+          if CommitResponse.isSuccess:
+            print(f"Stock of item {item.id} decremented by {item.quantity}.")
+          else:
+            print(f"Stock of item {item.id} could not be decremented due to failure in committing decrement.")
 
   def check_and_execute_order(self):
     while True:

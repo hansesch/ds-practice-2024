@@ -31,8 +31,10 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         return self.locks[id]
     
     def Read(self, request: database.ReadRequest, context):
+        # If the book is locked, wait until it is unlocked for reading
         while request.id in self.locks and self.locks[request.id].locked():
             time.sleep(1)
+        # Attempt to read from the last instance in the chain (tail), when it fails, remove it from the list and try the next from last    
         while self.hosts:
             try:
                 with grpc.insecure_channel(f'{self.hosts[-1]}:{self.ports[-1]}') as channel:
@@ -45,6 +47,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
                 self.hosts.pop()
         raise Exception("All database instances are down.")
     
+    # PrepareWrite and CommitWrite are used to prepare and commit write operations
     def PrepareWrite(self, request: database.PrepareWriteRequest, context):
         if request.id in self.write_order_statuses:
             print(f"Write operation for order {request.id} cannot be prepared because it is already in state {self.write_order_statuses[request.id]['status']}")
@@ -56,6 +59,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         }
         return database.PrepareResponse(isReady=True)
     
+    # First check if the write operation has been prepared and not already completed, then call the Write method
     def CommitWrite(self, request: database.CommitRequest, context):
         if request.id not in self.write_order_statuses:
             print(f"Write operation for order {request.id} cannot be commited because it has not been prepared")
@@ -65,7 +69,9 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             return database.CommitResponse(isSuccess=False)
         self.Write(request.id, self.write_order_statuses[request.id]['stockValue'])
         
-        
+    # Write method is used to write the stock value to the database
+    # It forwards the write request to the head of the chain
+    # If the call fails, it removes the failed port from the list and retries the next on the list    
     def Write(self, orderId, stockValue):
         with self.get_lock(orderId):
             while self.hosts:
@@ -89,6 +95,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             # If all instances fail, raise an exception
             raise Exception("All database instances are down.")
 
+    # PrepareDecrementStock checks if the decrement operation can be prepared and prepares it
     def PrepareDecrementStock(self, request: database.PrepareDecrementStockRequest, context):
         if request.id in self.decrement_order_statuses:
             print(f"Decrement operation for order {request.id} cannot be prepared because it is already in state {self.decrement_order_statuses[request.id]['status']}")
@@ -100,6 +107,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         }
         return database.PrepareResponse(isReady=True)
 
+    # CommitDecrementStock checks if the decrement operation can be committed and commits it
     def CommitDecrementStock(self, request: database.CommitRequest, context):
         if request.id not in self.decrement_order_statuses:
             print(f"Decrement operation for order {request.id} cannot be commited because it has not been prepared")
@@ -112,7 +120,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         print(f"Decrement stock request received for ID {request.id}, decrementing by {decrement_value}.")
         current_value = self.Read(database.ReadRequest(id=request.id), context)
         new_stock_value = current_value.stockValue - decrement_value
-        self.Write(id=request.id, stockValue=new_stock_value)
+        self.Write(request.id, new_stock_value)
         return database.CommitResponse(isSuccess=True)
     
 def serve():

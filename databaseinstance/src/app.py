@@ -20,11 +20,16 @@ class DatabaseInstanceService(databaseinstance_grpc.DatabaseInstanceServiceServi
             "4": 15
         }
 
+    # Returns the stock value for a given ID
     def Read(self, request: databaseinstance.ReadRequest, context):
         print(f"Read request received for ID {request.id}, returning value {self.data[request.id]}.")
         return databaseinstance.ReadResponse(stockValue=int(self.data[request.id]))
 
-    
+    # Writes a new stock value for a given ID
+    # If the request has hosts and ports, it forwards the request to the next host and port
+    # If the request fails, it rolls back the value to the previous value
+    # and returns a failure response with the failed host and port
+    # If the request has no hosts and ports, it is the tail and returns a success response
     def Write(self, request: databaseinstance.WriteRequest, context):
         print(f"Write request received for ID {request.id}, new stock value {request.stockValue}.")
         current_value = self.data[request.id]
@@ -40,6 +45,8 @@ class DatabaseInstanceService(databaseinstance_grpc.DatabaseInstanceServiceServi
                         #rollback
                         print(f"Rolling back {request.id} value to {current_value} from new value {request.stockValue} due to failed write request forward.")
                         self.data[request.id] = current_value
+                    else:
+                        print(f"Write request of ID {request.id} and new stock value {request.stockValue} forwarded to {next_host}:{next_port}.")
                     return response    
             except grpc.RpcError as e:
                 print(f"Write request forward failed to: {next_host}:{next_port}.")
