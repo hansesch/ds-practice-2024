@@ -19,6 +19,8 @@ sys.path.insert(3, utils_path)
 
 import database_pb2 as database
 import database_pb2_grpc as database_grpc
+import payment_pb2 as payment
+import payment_pb2_grpc as payment_grpc
 import orderexecutor_pb2 as orderexecutor
 import orderexecutor_pb2_grpc as orderexecutor_grpc
 import orderqueue_pb2 as orderqueue
@@ -31,7 +33,7 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
     self.id = str(uuid.uuid4())
     self.connect_to_coordinator()
     self.connect_to_queue()
-    self.check_and_execute_order()
+    self.fetch_order()
 
   def connect_to_queue(self):
     channel = grpc.insecure_channel('orderqueue:50054')
@@ -41,19 +43,32 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
     channel = grpc.insecure_channel('coordinator:50056')
     self.coordinator_stub = coordinator_grpc.CoordinatorServiceStub(channel)
 
-  def update_database(self, order):
+  def process_order(self, order):
     for item in order.items:
-      with grpc.insecure_channel(f'database:50057') as channel:
-        stub = database_grpc.DatabaseServiceStub(channel)
-        PrepareResponse = stub.PrepareDecrementStock(database.PrepareDecrementStockRequest(id=item.id, decrement=item.quantity))
-        if PrepareResponse.isReady:
-          CommitResponse = stub.CommitDecrementStock(database.CommitRequest(id=item.id))
-          if CommitResponse.isSuccess:
-            print(f"Stock of item {item.id} decremented by {item.quantity}.")
+      with grpc.insecure_channel(f'database:50057') as database_channel:
+        with grpc.insecure_channel(f'payment:50058') as payment_channel:
+          database_stub = database_grpc.DatabaseServiceStub(database_channel)
+          payment_stub = payment_grpc.PaymentServiceStub(payment_channel)
+          
+          prepareDecrementResponse = database_stub.PrepareDecrementStock(database.PrepareDecrementStockRequest(id=item.id, decrement=item.quantity))
+          preparePaymentResponse = payment_stub.PreparePayment(payment.PrepareRequest(id=item.id))
+          if not prepareDecrementResponse.isReady:
+            print(f"Database service is not ready to update stock values")
+          elif not preparePaymentResponse.isReady:
+            print(f"Payment service is not ready to process payment")
           else:
-            print(f"Stock of item {item.id} could not be decremented due to failure in committing decrement.")
+            commitDecrementResponse = database_stub.CommitDecrementStock(database.CommitRequest(id=item.id))
+            commitPaymentResponse = payment_stub.CommitPayment(payment.CommitRequest(orderId=item.id))
+            if commitDecrementResponse.isSuccess:
+              print(f"Stock of item {item.id} decremented by {item.quantity}.")
+            else:
+              print(f"Stock of item {item.id} could not be decremented due to failure in committing decrement.")
+            if commitPaymentResponse.isSuccess:
+              print(f"Processed payment for item {item.id}.")
+            else:
+              print(f"Payment for item {item.id} could not be processed due to failure in committing the payment.")
 
-  def check_and_execute_order(self):
+  def fetch_order(self):
     while True:
       time.sleep(5)
       request_access = self.coordinator_stub.Request(Empty())
@@ -62,7 +77,7 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
         self.coordinator_stub.Release(Empty())
         if order.orderId:
           print(f"Order {order.orderId} is being executed by replica with ID {self.id}...")
-          self.update_database(order)
+          self.process_order(order)
           time.sleep(5) # To simulate the time taken to execute the order
           print(f"Execution of order {order.orderId} has finished by replica with ID {self.id}...")
         else:
