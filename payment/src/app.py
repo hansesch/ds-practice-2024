@@ -15,7 +15,7 @@ import grpc
 class PaymentService(payment_grpc.PaymentServiceServicer):
     order_statuses = dict()
 
-    def PrepareRequest(self, request: payment.PrepareRequest, context):
+    def PreparePayment(self, request: payment.PrepareRequest, context):
         if request.orderId in self.order_statuses:
             print(f"Order {request.orderId} cannot be prepared because it is already in state {self.order_statuses[request.orderId]}")
             return payment.PrepareResponse(isReady=False)
@@ -23,7 +23,7 @@ class PaymentService(payment_grpc.PaymentServiceServicer):
         self.order_statuses[request.orderId] = 'ready'
         return payment.PrepareResponse(isReady=True)
         
-    def CommitRequest(self, request: payment.CommitRequest, context):
+    def CommitPayment(self, request: payment.CommitRequest, context):
         if request.orderId not in self.order_statuses:
             print(f"Order {request.orderId} cannot be commited because it has not been prepared")
             return payment.CommitResponse(isSuccess=False)

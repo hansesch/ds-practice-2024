@@ -16,6 +16,8 @@ utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/coordinator')
 sys.path.insert(2, utils_path)
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/database'))
 sys.path.insert(3, utils_path)
+utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/payment'))
+sys.path.insert(4, utils_path)
 
 import database_pb2 as database
 import database_pb2_grpc as database_grpc
@@ -51,7 +53,7 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
           payment_stub = payment_grpc.PaymentServiceStub(payment_channel)
           
           prepareDecrementResponse = database_stub.PrepareDecrementStock(database.PrepareDecrementStockRequest(id=item.id, decrement=item.quantity))
-          preparePaymentResponse = payment_stub.PreparePayment(payment.PrepareRequest(id=item.id))
+          preparePaymentResponse = payment_stub.PreparePayment(payment.PrepareRequest(orderId=item.id))
           if not prepareDecrementResponse.isReady:
             print(f"Database service is not ready to update stock values")
           elif not preparePaymentResponse.isReady:
