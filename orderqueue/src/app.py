@@ -4,12 +4,41 @@ import sys
 import os
 import bisect
 
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+from opentelemetry import metrics
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/orderqueue'))
 sys.path.insert(0, utils_path)
 
 import orderqueue_pb2 as orderqueue
 import orderqueue_pb2_grpc as orderqueue_grpc
+
+# Service name is required for most backends
+resource = Resource(attributes={
+    SERVICE_NAME: "orderqueue"
+})
+
+traceProvider = TracerProvider(resource=resource)
+processor = BatchSpanProcessor(OTLPSpanExporter(endpoint="http://observability:4318/v1/traces"))
+traceProvider.add_span_processor(processor)
+trace.set_tracer_provider(traceProvider)
+
+reader = PeriodicExportingMetricReader(
+    OTLPMetricExporter(endpoint="http://observability:4318/v1/metrics")
+)
+meterProvider = MeterProvider(resource=resource, metric_readers=[reader])
+metrics.set_meter_provider(meterProvider)
+
 
 class OrderQueueService(orderqueue_grpc.OrderQueueServiceServicer):
   def __init__(self):
