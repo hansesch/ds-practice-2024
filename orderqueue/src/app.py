@@ -32,6 +32,7 @@ traceProvider = TracerProvider(resource=resource)
 processor = BatchSpanProcessor(OTLPSpanExporter(endpoint="http://observability:4318/v1/traces"))
 traceProvider.add_span_processor(processor)
 trace.set_tracer_provider(traceProvider)
+tracer = trace.get_tracer("orderqueue.tracer")
 
 reader = PeriodicExportingMetricReader(
     OTLPMetricExporter(endpoint="http://observability:4318/v1/metrics")
@@ -43,16 +44,24 @@ metrics.set_meter_provider(meterProvider)
 class OrderQueueService(orderqueue_grpc.OrderQueueServiceServicer):
   def __init__(self):
     self.queue = []
+    self.meter = meterProvider.get_meter(name="Order Queue")
+    self.queue_size_counter = self.meter.create_up_down_counter(name="OrderQueueSizeCounter")
 
   def Enqueue(self, request: orderqueue.Order, context):
-    print(f"Order {request.orderId} enqueued")
-    bisect.insort(self.queue, (request.orderQuantity, request))
+    with tracer.start_as_current_span("orderqueue.order.enqueued") as span:
+      bisect.insort(self.queue, (request.orderQuantity, request))
+      self.queue_size_counter.add(1)
+      span.set_attribute("order_id", request.orderId)
+      print(f"Order {request.orderId} enqueued")
     return orderqueue.Confirmation(isSuccess=True, message="Order enqueued")
 
   def Dequeue(self, request, context):
     if self.queue:
-        _, order = self.queue.pop(0)
-        print(f"Order {order.orderId} dequeued")
+        with tracer.start_as_current_span("orderqueue.order.dequeued") as span:
+          _, order = self.queue.pop(0)
+          self.queue_size_counter.add(-1)
+          span.set_attribute("order_id", order.orderId)
+          print(f"Order {order.orderId} dequeued")
         return order
     else:
         print("No orders in the queue.")
