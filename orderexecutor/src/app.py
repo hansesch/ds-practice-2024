@@ -53,14 +53,14 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
           payment_stub = payment_grpc.PaymentServiceStub(payment_channel)
           
           prepareDecrementResponse = database_stub.PrepareDecrementStock(database.PrepareDecrementStockRequest(id=item.id, decrement=item.quantity))
-          preparePaymentResponse = payment_stub.PreparePayment(payment.PrepareRequest(orderId=item.id))
+          preparePaymentResponse = payment_stub.PreparePayment(payment.PrepareRequest(orderId=order.orderId))
           if not prepareDecrementResponse.isReady:
             print(f"Database service is not ready to update stock values")
           elif not preparePaymentResponse.isReady:
             print(f"Payment service is not ready to process payment")
           else:
             commitDecrementResponse = database_stub.CommitDecrementStock(database.CommitRequest(id=item.id))
-            commitPaymentResponse = payment_stub.CommitPayment(payment.CommitRequest(orderId=item.id))
+            commitPaymentResponse = payment_stub.CommitPayment(payment.CommitRequest(orderId=order.orderId))
             if commitDecrementResponse.isSuccess:
               print(f"Stock of item {item.id} decremented by {item.quantity}.")
             else:

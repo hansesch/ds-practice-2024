@@ -5,7 +5,7 @@ import os
 import bisect
 
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-
+from functools import cmp_to_key
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
@@ -48,11 +48,8 @@ class OrderQueueService(orderqueue_grpc.OrderQueueServiceServicer):
     self.queue_size_counter = self.meter.create_up_down_counter(name="OrderQueueSizeCounter")
 
   def Enqueue(self, request: orderqueue.Order, context):
-    with tracer.start_as_current_span("orderqueue.order.enqueued") as span:
-      bisect.insort(self.queue, (request.orderQuantity, request))
-      self.queue_size_counter.add(1)
-      span.set_attribute("order_id", request.orderId)
-      print(f"Order {request.orderId} enqueued")
+    print(f"Order {request.orderId} enqueued")
+    bisect.insort(self.queue, (request.orderQuantity, request), key=cmp_to_key(lambda x, y: x[0] - y[0]))
     return orderqueue.Confirmation(isSuccess=True, message="Order enqueued")
 
   def Dequeue(self, request, context):
