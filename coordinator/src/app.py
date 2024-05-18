@@ -17,31 +17,31 @@ class CoordinatorService(coordinator_grpc.CoordinatorServiceServicer):
         self.lock_timer = None
 
     def Request(self, request, context):
-        print("Access requested.")
+        #print("Access requested.")
         if self.isLock:
-            print("Access denied.")
+            #print("Access denied.")
             return coordinator.Message(isSuccess=False)
         else:
             self.isLock = True
             self.lock_timer = threading.Timer(60.0, self.auto_release)
             self.lock_timer.start()
-            print("Access granted.")
+            #print("Access granted.")
             return coordinator.Message(isSuccess=True)
 
     def Release(self, request, context):
-        print("Release requested.")
+        #print("Release requested.")
         if self.isLock:
             self.isLock = False
             if self.lock_timer is not None:
                 self.lock_timer.cancel()
-            print('Release granted.')
+            #print('Release granted.')
             return coordinator.Message(isSuccess=True)
         else:
-            print('Release denied - nothing to release')
+            #print('Release denied - nothing to release')
             return coordinator.Message(isSuccess=False)
 
     def auto_release(self):
-        print("Auto releasing the lock.")
+        #print("Auto releasing the lock.")
         self.isLock = False
 
         

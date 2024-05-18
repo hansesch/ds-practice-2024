@@ -42,8 +42,8 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
             }
         }
         self.orders[request.orderId] = order_info
-        print('Fraud Detection service: Initialized order with id ' + request.orderId + ', order data: ' + str(order_info['order_data']))
-
+        #print('Fraud Detection service: Initialized order with id ' + request.orderId + ', order data: ' + str(order_info['order_data']))
+        print('Fraud Detection service: Initialized order with id ', request.orderId)
         return common.ResponseData(isSuccess=True)
 
     def DetectFraud(self, request: common.RequestData, context):
@@ -57,20 +57,20 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
                                                                                 request.vectorClock, 
                                                                                 0)
             
-            print('updated vector clock: ' + str(order_info['vector_clock']))
+            print("OrderId: " + order_id + " Vector clock after operation: " + str(order_info['vector_clock']))
 
             if not order_info['order_data']['discountCode'] or order_info['order_data']['discountCode'] in self.valid_discount_codes:
-                print('Passed fraud detection. Calling suggestions service next')
+                #print('Passed fraud detection. Calling suggestions service next')
 
                 request_data = common.RequestData(
                     orderId=order_id,
                     vectorClock=order_info['vector_clock']
                 )
                 suggestions_response = self.call_suggestions_service(request_data)
-                print("Received response from Suggestions service")
+                #print("Received response from Suggestions service")
                 return suggestions_response
             else:
-                error_message = 'Invalid discount code. Did not pass fraud detetction.'
+                error_message = "OrderId: " + order_id + 'Invalid discount code. Did not pass fraud detetction.'
                 print(error_message)
                 return suggestions.SuggestionsResponse(isSuccess=False, items=[], message=error_message)
         else:

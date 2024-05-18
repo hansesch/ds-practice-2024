@@ -144,7 +144,7 @@ def checkout():
     # Print request object data
     data = request.json
     
-    print('Checkout called:', data)
+
 
     # Create an instance of the Orchestrator class
     orchestrator = Orchestrator()
@@ -152,11 +152,12 @@ def checkout():
     # This doesn't guarantee total uniqueness, but I think it's good enough for this example.
     order_id = str(int(time.time())) + str(random.randint(100, 999))
 
+    print('Checkout called, assigning OrderID:', order_id)
     # Process the order
     final_suggestion_response: suggestions.SuggestionsResponse = orchestrator.process_order(order_id, data)
 
     if not final_suggestion_response.isSuccess:
-        print('Invalid transaction: ' + final_suggestion_response.message)
+        print('OrderId: ' + order_id + ' Invalid transaction: ' + final_suggestion_response.message)
         return {
             'orderId': order_id,
             'status': final_suggestion_response.message
@@ -164,8 +165,8 @@ def checkout():
     else:
         suggested_books = [MessageToDict(item) for item in final_suggestion_response.items]
 
-        print('Transaction is valid, received suggested books:')
-        print(suggested_books)
+        #print('Transaction is valid, received suggested books:')
+        #print(suggested_books)
         print('Putting order ' + order_id + ' into order queue')
         with grpc.insecure_channel('orderqueue:50054') as channel:  
             stub = orderqueue_grpc.OrderQueueServiceStub(channel)
@@ -174,14 +175,14 @@ def checkout():
 
             confirmation: orderqueue.Confirmation = stub.Enqueue(orderqueue.Order(orderId=order_id, items=order_items, orderQuantity=total_items))
         if confirmation.isSuccess:
-            print('Received confirmation from order queue about order enqueueing')
+            print('Received confirmation from order queue about order enqueueing for OrderID:', order_id)
             return {
                 'orderId': order_id,
                 'status': 'Order Approved',
                 'suggestedBooks': suggested_books
             }, 200
         else:
-            print('order queue failed to enqueue order!')
+            print('order queue failed to enqueue order, OrderID:', order_id)
             return {
             'orderId': order_id,
             'status': 'Failed to enqueue order'

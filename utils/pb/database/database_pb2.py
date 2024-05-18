@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n utils/pb/database/database.proto\x12\x08\x64\x61tabase\"\x19\n\x0bReadRequest\x12\n\n\x02id\x18\x01 \x01(\t\"\"\n\x0cReadResponse\x12\x12\n\nstockValue\x18\x01 \x01(\x05\"\"\n\x0fPrepareResponse\x12\x0f\n\x07isReady\x18\x01 \x01(\x08\"\x1b\n\rCommitRequest\x12\n\n\x02id\x18\x01 \x01(\t\"#\n\x0e\x43ommitResponse\x12\x11\n\tisSuccess\x18\x01 \x01(\x08\"5\n\x13PrepareWriteRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nstockValue\x18\x02 \x01(\x05\"=\n\x1cPrepareDecrementStockRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tdecrement\x18\x02 \x01(\x05\x32\xfb\x02\n\x0f\x44\x61tabaseService\x12\x35\n\x04Read\x12\x15.database.ReadRequest\x1a\x16.database.ReadResponse\x12H\n\x0cPrepareWrite\x12\x1d.database.PrepareWriteRequest\x1a\x19.database.PrepareResponse\x12@\n\x0b\x43ommitWrite\x12\x17.database.CommitRequest\x1a\x18.database.CommitResponse\x12Z\n\x15PrepareDecrementStock\x12&.database.PrepareDecrementStockRequest\x1a\x19.database.PrepareResponse\x12I\n\x14\x43ommitDecrementStock\x12\x17.database.CommitRequest\x1a\x18.database.CommitResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n utils/pb/database/database.proto\x12\x08\x64\x61tabase\"\x19\n\x0bReadRequest\x12\n\n\x02id\x18\x01 \x01(\t\"\"\n\x0cReadResponse\x12\x12\n\nstockValue\x18\x01 \x01(\x05\"\"\n\x0fPrepareResponse\x12\x0f\n\x07isReady\x18\x01 \x01(\x08\" \n\rCommitRequest\x12\x0f\n\x07orderId\x18\x01 \x01(\t\"#\n\x0e\x43ommitResponse\x12\x11\n\tisSuccess\x18\x01 \x01(\x08\"5\n\x13PrepareWriteRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nstockValue\x18\x02 \x01(\x05\"N\n\x1cPrepareDecrementStockRequest\x12\x0f\n\x07orderId\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x01(\t\x12\x11\n\tdecrement\x18\x03 \x01(\x05\x32\xfb\x02\n\x0f\x44\x61tabaseService\x12\x35\n\x04Read\x12\x15.database.ReadRequest\x1a\x16.database.ReadResponse\x12H\n\x0cPrepareWrite\x12\x1d.database.PrepareWriteRequest\x1a\x19.database.PrepareResponse\x12@\n\x0b\x43ommitWrite\x12\x17.database.CommitRequest\x1a\x18.database.CommitResponse\x12Z\n\x15PrepareDecrementStock\x12&.database.PrepareDecrementStockRequest\x1a\x19.database.PrepareResponse\x12I\n\x14\x43ommitDecrementStock\x12\x17.database.CommitRequest\x1a\x18.database.CommitResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -28,13 +28,13 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_PREPARERESPONSE']._serialized_start=109
   _globals['_PREPARERESPONSE']._serialized_end=143
   _globals['_COMMITREQUEST']._serialized_start=145
-  _globals['_COMMITREQUEST']._serialized_end=172
-  _globals['_COMMITRESPONSE']._serialized_start=174
-  _globals['_COMMITRESPONSE']._serialized_end=209
-  _globals['_PREPAREWRITEREQUEST']._serialized_start=211
-  _globals['_PREPAREWRITEREQUEST']._serialized_end=264
-  _globals['_PREPAREDECREMENTSTOCKREQUEST']._serialized_start=266
-  _globals['_PREPAREDECREMENTSTOCKREQUEST']._serialized_end=327
-  _globals['_DATABASESERVICE']._serialized_start=330
-  _globals['_DATABASESERVICE']._serialized_end=709
+  _globals['_COMMITREQUEST']._serialized_end=177
+  _globals['_COMMITRESPONSE']._serialized_start=179
+  _globals['_COMMITRESPONSE']._serialized_end=214
+  _globals['_PREPAREWRITEREQUEST']._serialized_start=216
+  _globals['_PREPAREWRITEREQUEST']._serialized_end=269
+  _globals['_PREPAREDECREMENTSTOCKREQUEST']._serialized_start=271
+  _globals['_PREPAREDECREMENTSTOCKREQUEST']._serialized_end=349
+  _globals['_DATABASESERVICE']._serialized_start=352
+  _globals['_DATABASESERVICE']._serialized_end=731
 # @@protoc_insertion_point(module_scope)

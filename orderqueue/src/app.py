@@ -61,7 +61,7 @@ class OrderQueueService(orderqueue_grpc.OrderQueueServiceServicer):
           print(f"Order {order.orderId} dequeued")
         return order
     else:
-        print("No orders in the queue.")
+        #print("No orders in the queue.")
         return orderqueue.Order()  # Return an empty Order object
 
 def serve():

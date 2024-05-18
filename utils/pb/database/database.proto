@@ -23,7 +23,7 @@ message PrepareResponse {
 }
 
 message CommitRequest {
-    string id = 1;
+    string orderId = 1;
 }
 
 message CommitResponse {
@@ -36,6 +36,7 @@ message PrepareWriteRequest {
 }
 
 message PrepareDecrementStockRequest {
-    string id = 1;
-    int32 decrement = 2;
+    string orderId = 1;
+    string id = 2;
+    int32 decrement = 3;
 }

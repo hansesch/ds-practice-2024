@@ -52,23 +52,23 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
           database_stub = database_grpc.DatabaseServiceStub(database_channel)
           payment_stub = payment_grpc.PaymentServiceStub(payment_channel)
           
-          prepareDecrementResponse = database_stub.PrepareDecrementStock(database.PrepareDecrementStockRequest(id=item.id, decrement=item.quantity))
+          prepareDecrementResponse = database_stub.PrepareDecrementStock(database.PrepareDecrementStockRequest(orderId=order.orderId, id=item.id, decrement=item.quantity))
           preparePaymentResponse = payment_stub.PreparePayment(payment.PrepareRequest(orderId=order.orderId))
           if not prepareDecrementResponse.isReady:
             print(f"Database service is not ready to update stock values")
           elif not preparePaymentResponse.isReady:
             print(f"Payment service is not ready to process payment")
           else:
-            commitDecrementResponse = database_stub.CommitDecrementStock(database.CommitRequest(id=item.id))
+            commitDecrementResponse = database_stub.CommitDecrementStock(database.CommitRequest(orderId=order.orderId))
             commitPaymentResponse = payment_stub.CommitPayment(payment.CommitRequest(orderId=order.orderId))
             if commitDecrementResponse.isSuccess:
               print(f"Stock of item {item.id} decremented by {item.quantity}.")
             else:
               print(f"Stock of item {item.id} could not be decremented due to failure in committing decrement.")
             if commitPaymentResponse.isSuccess:
-              print(f"Processed payment for item {item.id}.")
+              print(f"Processed payment for item {order.orderId}.")
             else:
-              print(f"Payment for item {item.id} could not be processed due to failure in committing the payment.")
+              print(f"Payment for item {order.orderId} could not be processed due to failure in committing the payment.")
 
   def fetch_order(self):
     while True:
@@ -82,10 +82,11 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
           self.process_order(order)
           time.sleep(5) # To simulate the time taken to execute the order
           print(f"Execution of order {order.orderId} has finished by replica with ID {self.id}...")
-        else:
-          print(f"{self.id} Executor: No orders in the queue. Waiting for new orders...")
-      else:
-        print(f"{self.id} Executor: Another replica is currently leader. Waiting for my turn...")
+      # removed to reduce spam
+      #  else:
+      #    print(f"{self.id} Executor: No orders in the queue. Waiting for new orders...")
+      #else:
+      #  print(f"{self.id} Executor: Another replica is currently leader. Waiting for my turn...")
       time.sleep(5)
 
 def wait_for_service(service, port):

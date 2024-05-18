@@ -97,30 +97,32 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
 
     # PrepareDecrementStock checks if the decrement operation can be prepared and prepares it
     def PrepareDecrementStock(self, request: database.PrepareDecrementStockRequest, context):
-        if request.id in self.decrement_order_statuses:
-            print(f"Decrement operation for order {request.id} cannot be prepared because it is already in state {self.decrement_order_statuses[request.id]['status']}")
+        if request.orderId in self.decrement_order_statuses:
+            print(f"Decrement operation for order {request.orderId} cannot be prepared because it is already in state {self.decrement_order_statuses[request.orderId]['status']}")
             return database.PrepareResponse(isReady=False)
         
-        self.decrement_order_statuses[request.id] = {
+        self.decrement_order_statuses[request.orderId] = {
             'status': 'ready',
+            'id': request.id,
             'decrement': request.decrement
         }
         return database.PrepareResponse(isReady=True)
 
     # CommitDecrementStock checks if the decrement operation can be committed and commits it
     def CommitDecrementStock(self, request: database.CommitRequest, context):
-        if request.id not in self.decrement_order_statuses:
-            print(f"Decrement operation for order {request.id} cannot be commited because it has not been prepared")
+        if request.orderId not in self.decrement_order_statuses:
+            print(f"Decrement operation for order {request.orderId} cannot be commited because it has not been prepared")
             return database.CommitResponse(isSuccess=False)
-        elif self.decrement_order_statuses[request.id]['status'] == 'completed':
-            print(f"Decrement operation for order {request.id} cannot be commited because it has already been completed")
+        elif self.decrement_order_statuses[request.orderId]['status'] == 'completed':
+            print(f"Decrement operation for order {request.orderId} cannot be commited because it has already been completed")
             return database.CommitResponse(isSuccess=False)
         
-        decrement_value = self.decrement_order_statuses[request.id]['decrement']
-        print(f"Decrement stock request received for ID {request.id}, decrementing by {decrement_value}.")
-        current_value = self.Read(database.ReadRequest(id=request.id), context)
+        decrement_value = self.decrement_order_statuses[request.orderId]['decrement']
+        bookId = self.decrement_order_statuses[request.orderId]['id']
+        print(f"Decrement stock request received for ID {bookId}, decrementing by {decrement_value}.")
+        current_value = self.Read(database.ReadRequest(id=bookId), context)
         new_stock_value = current_value.stockValue - decrement_value
-        self.Write(request.id, new_stock_value)
+        self.Write(bookId, new_stock_value)
         return database.CommitResponse(isSuccess=True)
     
 def serve():

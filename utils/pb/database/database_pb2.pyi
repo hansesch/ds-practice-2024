@@ -23,10 +23,10 @@ class PrepareResponse(_message.Message):
     def __init__(self, isReady: bool = ...) -> None: ...
 
 class CommitRequest(_message.Message):
-    __slots__ = ("id",)
-    ID_FIELD_NUMBER: _ClassVar[int]
-    id: str
-    def __init__(self, id: _Optional[str] = ...) -> None: ...
+    __slots__ = ("orderId",)
+    ORDERID_FIELD_NUMBER: _ClassVar[int]
+    orderId: str
+    def __init__(self, orderId: _Optional[str] = ...) -> None: ...
 
 class CommitResponse(_message.Message):
     __slots__ = ("isSuccess",)
@@ -43,9 +43,11 @@ class PrepareWriteRequest(_message.Message):
     def __init__(self, id: _Optional[str] = ..., stockValue: _Optional[int] = ...) -> None: ...
 
 class PrepareDecrementStockRequest(_message.Message):
-    __slots__ = ("id", "decrement")
+    __slots__ = ("orderId", "id", "decrement")
+    ORDERID_FIELD_NUMBER: _ClassVar[int]
     ID_FIELD_NUMBER: _ClassVar[int]
     DECREMENT_FIELD_NUMBER: _ClassVar[int]
+    orderId: str
     id: str
     decrement: int
-    def __init__(self, id: _Optional[str] = ..., decrement: _Optional[int] = ...) -> None: ...
+    def __init__(self, orderId: _Optional[str] = ..., id: _Optional[str] = ..., decrement: _Optional[int] = ...) -> None: ...

@@ -47,7 +47,8 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             }
         }
         self.orders[request.orderId] = order_info
-        print('Transaction Verification: Initialized Order, orderId: ' + request.orderId + ' orderInfo: ' + str(order_info))
+        #print('Transaction Verification: Initialized Order, orderId: ' + request.orderId + ' orderInfo: ' + str(order_info))
+        print('Transaction Verification: Initialized Order, orderId:', request.orderId)
 
         return common.ResponseData(isSuccess=True)
     
@@ -63,10 +64,10 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             credit_card_number = order_info['order_data']['credit_card_info'].number
             is_valid = re.fullmatch(r'\d{16}', credit_card_number) is not None
             if is_valid:
-                print('Credit card number ' + credit_card_number + ' is valid')
+                print('Credit card number for orderID: ' + order_id + ' is valid!')
                 return self.VerifyCreditCardExpiryDate(common.RequestData(orderId=order_id, vectorClock=order_info['vector_clock']), context)
             else:
-                print('Credit card number ' + credit_card_number + ' is not valid!')
+                print('Credit card number for orderID: ' + order_id + ' is not valid!')
                 return suggestions.SuggestionsResponse(isSuccess=False, items=[], message='Credit card number is not valid!')
         else:
             error_message = 'order with id ' + order_id + ' has not been initialized!'
@@ -91,6 +92,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             except ValueError:
                 is_valid = False
             if is_valid:
+                print('Expiry Date on the credit card for orderID: ' + order_id + ' is valid!')
                 return self.VerifyOrderItems(common.RequestData(orderId=order_id, vectorClock=order_info['vector_clock']), context)
             else:
                 return suggestions.SuggestionsResponse(isSuccess=False, items=[], message="Credit card is expired!")
@@ -116,9 +118,10 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
                     is_valid = False
             
             if is_valid:
+                print('Order items for orderID: ' + order_id + ' are valid!')
                 # Call the fraud-detection service.
                 fraud_detection_response = self.call_fraud_detection_service(common.RequestData(orderId=order_id, vectorClock=order_info['vector_clock']))
-                print("received response from fraud detection service")
+                #print("received response from fraud detection service")
                 return fraud_detection_response
             else:
                 return suggestions.SuggestionsResponse(isSuccess=False, items=[], message="Order items are not valid!")
