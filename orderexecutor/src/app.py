@@ -7,6 +7,12 @@ from google.protobuf.empty_pb2 import Empty
 import socket
 from concurrent import futures
 
+from opentelemetry import metrics
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/orderexecutor'))
 sys.path.insert(0, utils_path)
@@ -30,12 +36,25 @@ import orderqueue_pb2_grpc as orderqueue_grpc
 import coordinator_pb2 as coordinator
 import coordinator_pb2_grpc as coordinator_grpc
 
+resource = Resource(attributes={
+    SERVICE_NAME: "orderqueue"
+})
+
+reader = PeriodicExportingMetricReader(
+    OTLPMetricExporter(endpoint="http://observability:4318/v1/metrics")
+)
+meterProvider = MeterProvider(resource=resource, metric_readers=[reader])
+metrics.set_meter_provider(meterProvider)
+meter = meterProvider.get_meter(name="Order Executor")
+
+
 class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
   def __init__(self):
     self.id = str(uuid.uuid4())
     self.connect_to_coordinator()
     self.connect_to_queue()
     self.fetch_order()
+    self.order_counter = meter.create_counter(name="OrdersExecutedCounter")
 
   def connect_to_queue(self):
     channel = grpc.insecure_channel('orderqueue:50054')
@@ -69,6 +88,7 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
               print(f"Processed payment for item {order.orderId}.")
             else:
               print(f"Payment for item {order.orderId} could not be processed due to failure in committing the payment.")
+            self.order_counter.add(1)
 
   def fetch_order(self):
     while True:

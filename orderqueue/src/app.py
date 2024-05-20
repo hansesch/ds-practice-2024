@@ -3,10 +3,10 @@ from concurrent import futures
 import sys
 import os
 import bisect
-
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from functools import cmp_to_key
+
 from opentelemetry import trace
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -27,7 +27,6 @@ import orderqueue_pb2_grpc as orderqueue_grpc
 resource = Resource(attributes={
     SERVICE_NAME: "orderqueue"
 })
-
 traceProvider = TracerProvider(resource=resource)
 processor = BatchSpanProcessor(OTLPSpanExporter(endpoint="http://observability:4318/v1/traces"))
 traceProvider.add_span_processor(processor)
@@ -39,17 +38,18 @@ reader = PeriodicExportingMetricReader(
 )
 meterProvider = MeterProvider(resource=resource, metric_readers=[reader])
 metrics.set_meter_provider(meterProvider)
+meter = meterProvider.get_meter(name="Order Queue")
 
 
 class OrderQueueService(orderqueue_grpc.OrderQueueServiceServicer):
   def __init__(self):
     self.queue = []
-    self.meter = meterProvider.get_meter(name="Order Queue")
-    self.queue_size_counter = self.meter.create_up_down_counter(name="OrderQueueSizeCounter")
+    self.queue_size_counter = meter.create_up_down_counter(name="OrderQueueSizeCounter")
 
   def Enqueue(self, request: orderqueue.Order, context):
     print(f"Order {request.orderId} enqueued")
     bisect.insort(self.queue, (request.orderQuantity, request), key=cmp_to_key(lambda x, y: x[0] - y[0]))
+    self.queue_size_counter.add(1)
     return orderqueue.Confirmation(isSuccess=True, message="Order enqueued")
 
   def Dequeue(self, request, context):

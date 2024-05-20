@@ -8,6 +8,12 @@ from flask import Flask, request
 from flask_cors import CORS
 from google.protobuf.json_format import MessageToDict
 
+from opentelemetry import metrics
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
 # Change these lines only if strictly needed.
@@ -38,6 +44,17 @@ import orderexecutor_pb2_grpc as orderexecutor_grpc
 import grpc
 from google.protobuf.empty_pb2 import Empty
 
+
+resource = Resource(attributes={
+    SERVICE_NAME: "orderqueue"
+})
+reader = PeriodicExportingMetricReader(
+    OTLPMetricExporter(endpoint="http://observability:4318/v1/metrics")
+)
+meterProvider = MeterProvider(resource=resource, metric_readers=[reader])
+metrics.set_meter_provider(meterProvider)
+meter = meterProvider.get_meter(name="Orchestrator")
+
 class Orchestrator:
     def __init__(self):
         channel = grpc.insecure_channel('fraud_detection:50051')
@@ -46,6 +63,7 @@ class Orchestrator:
         self.transaction_verification_service = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
         channel = grpc.insecure_channel('suggestions:50053')
         self.suggestions_service = suggestions_grpc.SuggestionsServiceStub(channel)
+        self.order_counter = meter.create_counter(name="OrchestratorOrdersProcessedCounter")
 
 
     def initialize_services(self, data, orderId):
@@ -67,7 +85,9 @@ class Orchestrator:
             orderId=order_id,
             vectorClock=[0, 0, 0]
         )
-        return self.transaction_verification_service.VerifyCreditCardNumber(request_data)
+        response = self.transaction_verification_service.VerifyCreditCardNumber(request_data)
+        self.order_counter.add(1)
+        return response
 
 
     def get_transaction_verification_order_data(self, orderId, data):

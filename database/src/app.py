@@ -5,6 +5,18 @@ from concurrent import futures
 import threading
 import time
 
+from opentelemetry import trace
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+from opentelemetry import metrics
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
+
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/database'))
 sys.path.insert(0, utils_path)
@@ -16,6 +28,23 @@ import database_pb2_grpc as database_grpc
 import databaseinstance_pb2 as databaseinstance
 import databaseinstance_pb2_grpc as databaseinstance_grpc
 
+resource = Resource(attributes={
+    SERVICE_NAME: "database"
+})
+
+traceProvider = TracerProvider(resource=resource)
+processor = BatchSpanProcessor(OTLPSpanExporter(endpoint="http://observability:4318/v1/traces"))
+traceProvider.add_span_processor(processor)
+trace.set_tracer_provider(traceProvider)
+tracer = trace.get_tracer("database.tracer")
+
+reader = PeriodicExportingMetricReader(
+    OTLPMetricExporter(endpoint="http://observability:4318/v1/metrics")
+)
+meterProvider = MeterProvider(resource=resource, metric_readers=[reader])
+metrics.set_meter_provider(meterProvider)
+meter = meterProvider.get_meter(name="Database")
+
 
 class DatabaseService(database_grpc.DatabaseServiceServicer):
     def __init__(self):
@@ -24,6 +53,9 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         self.locks = {}
         self.write_order_statuses = dict()
         self.decrement_order_statuses = dict()
+        self.active_databases_counter = meter.create_up_down_counter(name="ActiveDatabasesCounter")
+        self.active_databases_counter.add(len(self.hosts))
+
 
     def get_lock(self, id):
         if id not in self.locks:
@@ -45,6 +77,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
                 print(f"Failed to connect to tail databaseinstance:{self.hosts[-1]}:{self.ports[-1]}. Removing from list.")
                 self.ports.pop()
                 self.hosts.pop()
+                self.active_databases_counter.add(-1)
         raise Exception("All database instances are down.")
     
     # PrepareWrite and CommitWrite are used to prepare and commit write operations
@@ -67,7 +100,13 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         elif self.write_order_statuses[request.id]['status'] == 'completed':
             print(f"Write operation for order {request.id} cannot be commited because it has already been completed")
             return database.CommitResponse(isSuccess=False)
-        self.Write(request.id, self.write_order_statuses[request.id]['stockValue'])
+        
+        with tracer.start_as_current_span("database.write.committing") as span:
+            span.set_attributes({
+                    'id': request.id,
+                    'stock_value': self.write_order_statuses[request.id]['stockValue']
+            })
+            self.Write(request.id, self.write_order_statuses[request.id]['stockValue'])
         
     # Write method is used to write the stock value to the database
     # It forwards the write request to the head of the chain
@@ -92,6 +131,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
                     print(f"Failed to connect to the head database instance:{self.hosts[0]}:{self.ports[0]}. Removing from list.")
                     self.ports.pop(0)
                     self.hosts.pop(0)
+                    self.active_databases_counter.add(-1)
             # If all instances fail, raise an exception
             raise Exception("All database instances are down.")
 
@@ -119,10 +159,16 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         
         decrement_value = self.decrement_order_statuses[request.orderId]['decrement']
         bookId = self.decrement_order_statuses[request.orderId]['id']
-        print(f"Decrement stock request received for ID {bookId}, decrementing by {decrement_value}.")
-        current_value = self.Read(database.ReadRequest(id=bookId), context)
-        new_stock_value = current_value.stockValue - decrement_value
-        self.Write(bookId, new_stock_value)
+        with tracer.start_as_current_span("database.decrement.committing") as span:
+            print(f"Decrement stock request received for ID {bookId}, decrementing by {decrement_value}.")
+            current_value = self.Read(database.ReadRequest(id=bookId), context)
+            new_stock_value = current_value.stockValue - decrement_value
+            span.set_attributes({
+                'book_id': bookId,
+                'old_stock_value': current_value,
+                'new_stock_value': new_stock_value
+            })
+            self.Write(bookId, new_stock_value)
         return database.CommitResponse(isSuccess=True)
     
 def serve():
