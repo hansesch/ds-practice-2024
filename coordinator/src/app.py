@@ -32,10 +32,13 @@ class CoordinatorService(coordinator_grpc.CoordinatorServiceServicer):
     def __init__(self):
         self.isLock = False
         self.lock_timer = None
-        self.lock_gauge = meter.create_observable_gauge(name="CoordinatorLockGauge", callbacks=self.gauge_lock)
+        self.lock_gauge = meter.create_observable_gauge(name="CoordinatorLockGauge", callbacks=[self.gauge_lock])
 
-    def gauge_lock(self):
-        return self.isLock
+    def gauge_lock(self, unkown):
+        # this function is somehow called with 2 arguments...
+        if (unkown):
+            print(unkown)
+        return [metrics.Observation(1 if self.isLock else 0)]
 
     def Request(self, request, context):
         #print("Access requested.")

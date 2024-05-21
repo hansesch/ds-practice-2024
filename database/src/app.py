@@ -54,13 +54,15 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         self.write_order_statuses = dict()
         self.decrement_order_statuses = dict()
         self.active_databases_counter = meter.create_up_down_counter(name="ActiveDatabasesCounter")
+        self.active_databases_counter.add(len(self.hosts))
         self.write_time_histogram = meter.create_histogram(name="WriteTimeHistogram")
         self.decrement_time_histogram = meter.create_histogram(name="DecrementTimeHistogram")
-        self.lock_gauge = meter.create_observable_gauge(name="LockGauge", callbacks=self.gauge_lock)
-        self.active_databases_counter.add(len(self.hosts))
-
-    def gauge_lock(self):
-        return len(self.locks) > 0
+        self.lock_gauge = meter.create_observable_gauge(name="LockGauge", callbacks=[self.gauge_locks])
+    def gauge_locks(self, unknown):
+        # this function is somehow called with 2 arguments...
+        if (unknown != None):
+            print(unknown)
+        return [metrics.Observation(len(self.locks))]
 
     def get_lock(self, id):
         if id not in self.locks:
