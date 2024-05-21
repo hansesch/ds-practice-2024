@@ -4,6 +4,13 @@ import sys
 import os
 import threading 
 
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry import metrics
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
+
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 utils_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/coordinator'))
 sys.path.insert(0, utils_path)
@@ -11,10 +18,24 @@ sys.path.insert(0, utils_path)
 import coordinator_pb2 as coordinator
 import coordinator_pb2_grpc as coordinator_grpc
 
+resource = Resource(attributes={
+    SERVICE_NAME: "orderqueue"
+})
+reader = PeriodicExportingMetricReader(
+    OTLPMetricExporter(endpoint="http://observability:4318/v1/metrics")
+)
+meterProvider = MeterProvider(resource=resource, metric_readers=[reader])
+metrics.set_meter_provider(meterProvider)
+meter = meterProvider.get_meter(name="Coordinator")
+
 class CoordinatorService(coordinator_grpc.CoordinatorServiceServicer):
     def __init__(self):
         self.isLock = False
         self.lock_timer = None
+        self.lock_gauge = meter.create_observable_gauge(name="CoordinatorLockGauge", callbacks=self.gauge_lock)
+
+    def gauge_lock(self):
+        return self.isLock
 
     def Request(self, request, context):
         #print("Access requested.")

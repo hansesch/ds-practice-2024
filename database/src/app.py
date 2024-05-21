@@ -54,8 +54,13 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         self.write_order_statuses = dict()
         self.decrement_order_statuses = dict()
         self.active_databases_counter = meter.create_up_down_counter(name="ActiveDatabasesCounter")
+        self.write_time_histogram = meter.create_histogram(name="WriteTimeHistogram")
+        self.decrement_time_histogram = meter.create_histogram(name="DecrementTimeHistogram")
+        self.lock_gauge = meter.create_observable_gauge(name="LockGauge", callbacks=self.gauge_lock)
         self.active_databases_counter.add(len(self.hosts))
 
+    def gauge_lock(self):
+        return len(self.locks) > 0
 
     def get_lock(self, id):
         if id not in self.locks:
@@ -106,7 +111,9 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
                     'id': request.id,
                     'stock_value': self.write_order_statuses[request.id]['stockValue']
             })
+            start_time = time.time()
             self.Write(request.id, self.write_order_statuses[request.id]['stockValue'])
+            self.write_time_histogram.record(time.time() - start_time)
         
     # Write method is used to write the stock value to the database
     # It forwards the write request to the head of the chain
@@ -161,6 +168,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         bookId = self.decrement_order_statuses[request.orderId]['id']
         with tracer.start_as_current_span("database.decrement.committing") as span:
             print(f"Decrement stock request received for ID {bookId}, decrementing by {decrement_value}.")
+            start_time = time.time()
             current_value = self.Read(database.ReadRequest(id=bookId), context)
             new_stock_value = current_value.stockValue - decrement_value
             span.set_attributes({
@@ -169,6 +177,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
                 'new_stock_value': new_stock_value
             })
             self.Write(bookId, new_stock_value)
+            self.decrement_time_histogram.record(time.time() - start_time)
         return database.CommitResponse(isSuccess=True)
     
 def serve():
