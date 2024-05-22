@@ -191,19 +191,6 @@ services:
     volumes:
       - ./utils:/app/utils
       - ./databaseinstance/src:/app/databaseinstance/src
-  databaseinstance4:
-    build: 
-      context: ./
-      dockerfile: ./databaseinstance/Dockerfile
-    ports:
-      - 50048:50048
-    environment:
-      - PYTHONUNBUFFERED=TRUE
-      - PYTHONFILE=/app/databaseinstance/src/app.py
-      - PORT=50048
-    volumes:
-      - ./utils:/app/utils
-      - ./databaseinstance/src:/app/databaseinstance/src
   payment:
     build: 
       context: ./

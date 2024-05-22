@@ -48,8 +48,8 @@ meter = meterProvider.get_meter(name="Database")
 
 class DatabaseService(database_grpc.DatabaseServiceServicer):
     def __init__(self):
-        self.hosts = ["databaseinstance1", "databaseinstance2", "databaseinstance3", "databaseinstance4"]
-        self.ports = ["50045", "50046", "50047", "50048"]
+        self.hosts = ["databaseinstance1", "databaseinstance2", "databaseinstance3"]
+        self.ports = ["50045", "50046", "50047"]
         self.locks = {}
         self.write_order_statuses = dict()
         self.decrement_order_statuses = dict()
