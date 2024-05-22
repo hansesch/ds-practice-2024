@@ -53,8 +53,8 @@ class OrderExecutorService(orderexecutor_grpc.OrderExecutorServiceServicer):
     self.id = str(uuid.uuid4())
     self.connect_to_coordinator()
     self.connect_to_queue()
-    self.fetch_order()
     self.order_counter = meter.create_counter(name="OrdersExecutedCounter")
+    self.fetch_order()
 
   def connect_to_queue(self):
     channel = grpc.insecure_channel('orderqueue:50054')
