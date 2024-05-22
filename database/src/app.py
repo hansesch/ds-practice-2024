@@ -57,7 +57,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         self.active_databases_counter.add(len(self.hosts))
         self.write_time_histogram = meter.create_histogram(name="WriteTimeHistogram")
         self.decrement_time_histogram = meter.create_histogram(name="DecrementTimeHistogram")
-        self.lock_gauge = meter.create_observable_gauge(name="LockGauge", callbacks=[self.gauge_locks])
+        self.lock_gauge = meter.create_observable_gauge(name="DatabaseLockGauge", callbacks=[self.gauge_locks])
     def gauge_locks(self, unknown):
         # this function is somehow called with 2 arguments...
         if (unknown != None):
