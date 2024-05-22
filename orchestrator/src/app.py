@@ -170,7 +170,7 @@ def checkout():
         # Create an instance of the Orchestrator class
         orchestrator = Orchestrator()
 
-        # This doesn't guarantee total uniqueness, but I think it's good enough for this example.
+        # Generate a unique order ID
         order_id = str(int(time.time())) + str(random.randint(100, 999))
 
         print('Checkout called, assigning OrderID:', order_id)
@@ -178,35 +178,36 @@ def checkout():
         final_suggestion_response = orchestrator.process_order(order_id, data)
 
         if not final_suggestion_response.isSuccess:
-            print('OrderId: ' + order_id + ' Invalid transaction: ' + final_suggestion_response.message)
+            print(f"OrderId: {order_id} Invalid transaction: {final_suggestion_response.message}")
             return jsonify({
                 'orderId': order_id,
                 'status': final_suggestion_response.message
-            }), 200  
+            }), 200
+
+        suggested_books = [MessageToDict(item) for item in final_suggestion_response.items]
+        print(f"Transaction is valid, received suggested books: {suggested_books}")
+        print(f"Putting order {order_id} into order queue")
+
+        with grpc.insecure_channel('orderqueue:50054') as channel:
+            stub = orderqueue_grpc.OrderQueueServiceStub(channel)
+            total_items = sum([item['quantity'] for item in data['items']])
+            order_items = [orderqueue.OrderItem(id=item['id'], quantity=item['quantity']) for item in data['items']]
+            confirmation = stub.Enqueue(orderqueue.Order(orderId=order_id, items=order_items, orderQuantity=total_items))
+
+        if confirmation.isSuccess:
+            print(f"Received confirmation from order queue about order enqueueing for OrderID: {order_id}")
+            return jsonify({
+                'orderId': order_id,
+                'status': 'Order Approved',
+                'suggestedBooks': suggested_books
+            }), 200
         else:
-            suggested_books = [MessageToDict(item) for item in final_suggestion_response.items]
+            print(f"Order queue failed to enqueue order, OrderID: {order_id}")
+            return jsonify({
+                'orderId': order_id,
+                'status': 'Failed to enqueue order'
+            }), 500
 
-            print('Transaction is valid, received suggested books:', suggested_books)
-            print('Putting order ' + order_id + ' into order queue')
-            with grpc.insecure_channel('orderqueue:50054') as channel:  
-                stub = orderqueue_grpc.OrderQueueServiceStub(channel)
-                total_items = sum([item['quantity'] for item in data['items']])
-                order_items = [orderqueue.OrderItem(id=item['id'], quantity=item['quantity']) for item in data['items']]
-
-                confirmation = stub.Enqueue(orderqueue.Order(orderId=order_id, items=order_items, orderQuantity=total_items))
-            if confirmation.isSuccess:
-                print('Received confirmation from order queue about order enqueueing for OrderID:', order_id)
-                return jsonify({
-                    'orderId': order_id,
-                    'status': 'Order Approved',
-                    'suggestedBooks': suggested_books
-                }), 200
-            else:
-                print('Order queue failed to enqueue order, OrderID:', order_id)
-                return jsonify({
-                    'orderId': order_id,
-                    'status': 'Failed to enqueue order'
-                }), 500 
     except Exception as e:
         print(f"Error in checkout: {e}")
         return jsonify({
@@ -214,6 +215,7 @@ def checkout():
             'status': 'Error occurred',
             'message': str(e)
         }), 500
+
 
 
 if __name__ == '__main__':
