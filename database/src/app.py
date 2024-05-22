@@ -175,7 +175,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             new_stock_value = current_value.stockValue - decrement_value
             span.set_attributes({
                 'book_id': bookId,
-                'old_stock_value': current_value,
+                'old_stock_value': current_value.stockValue,
                 'new_stock_value': new_stock_value
             })
             self.Write(bookId, new_stock_value)
